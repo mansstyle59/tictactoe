@@ -3,7 +3,7 @@
 Jeu Tic-Tac-Toe avancé en React avec 6 règles configurables.
 
 ## Jouer en ligne
-🔗 [Lien GitHub Pages](https://VOTRE_USERNAME.github.io/tictactoe/)
+🔗 [Lien GitHub Pages](https://mansstyle59.github.io/tictactoe/)
 
 ## Fonctionnalités
 - Grille 3×3 ou 4×4
