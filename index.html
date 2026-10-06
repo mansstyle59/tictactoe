@@ -449,6 +449,7 @@ header.top{transition:opacity .1s linear;transform-origin:left top}
 .ltitle{font-size:clamp(19px,5.6vw,26px);font-weight:800;line-height:1.15;letter-spacing:-.015em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tabsub{display:block;margin:10px 0 0;font-size:15px;color:var(--muted);font-weight:500}
 header.top{padding-top:10px}
+.welcome{gap:14px;padding:30px 22px}
 </style>
 </head>
 <body>
@@ -1449,10 +1450,27 @@ let ME=null,PROFS=[];
 const initial=s=>esc((s||"?").trim().charAt(0).toUpperCase());
 function saveProfs(){ls.set("cd-profiles",PROFS)}
 function boot(){
-  PROFS=ls.get("cd-profiles",[]).filter(p=>p&&p.id&&p.pseudo).map(p=>({id:p.id,pseudo:p.pseudo,color:p.color||AVC[0],created:p.created||new Date().toISOString()}));
+  PROFS=ls.get("cd-profiles",[]).filter(p=>p&&p.id&&p.pseudo).map(p=>({id:p.id,pseudo:p.pseudo,color:p.color||AVC[0],created:p.created||new Date().toISOString(),named:!!p.named||p.pseudo!=="Moi"}));
   if(!PROFS.length){PROFS=[{id:"p"+Date.now(),pseudo:"Moi",color:AVC[0],created:new Date().toISOString()}]}
   PROFS.sort((a,b)=>a.created.localeCompare(b.created));saveProfs();
   useProfile(PROFS.find(x=>x.id===ls.get("cd-pid",null))||PROFS[0]);
+  if(PROFS.length===1&&!PROFS[0].named)showWelcome(PROFS[0]);
+}
+function showWelcome(p){
+  const a=$("#auth");a.hidden=false;document.body.style.overflow="hidden";
+  a.innerHTML=`<div class="authcard welcome" role="document"><img class="logo big" src="${LOGO}" alt="Logo Coach IA">
+    <h2 style="text-align:center">Bienvenue sur Coach IA</h2>
+    <p class="note" style="margin:0;padding:0;text-align:center">Tes séances guidées par la voix, à la maison ou en salle. Pour commencer, choisis ton pseudo.</p>
+    <form id="wForm" class="aform" novalidate>
+      <label class="fld" for="wName"><span class="label" style="padding:0">Ton pseudo</span><input id="wName" maxlength="20" placeholder="Ex. : Denis" autocomplete="nickname" enterkeyhint="go"></label>
+      <p class="err" id="wErr" hidden></p>
+      <button class="cta" type="submit">C'est parti</button>
+    </form>
+    <p class="note" style="margin:0;padding:0;text-align:center">Tu pourras le changer ou ajouter d'autres profils avec le bouton rond en haut à droite.</p></div>`;
+  setTimeout(()=>$("#wName").focus(),200);
+  $("#wForm").onsubmit=ev=>{ev.preventDefault();const n=$("#wName").value.trim();
+    if(n.length<2){$("#wErr").textContent="Ton pseudo doit faire au moins 2 caractères.";$("#wErr").hidden=false;return}
+    const q=PROFS.find(x=>x.id===p.id);q.pseudo=n;q.named=true;saveProfs();closeProfiles();useProfile(q);toast("Bienvenue "+n+" !")};
 }
 function useProfile(p){
   ME=Object.assign({},p,{first:PROFS[0].id===p.id});ls.set("cd-pid",p.id);
@@ -1482,9 +1500,9 @@ function openProfiles(){
   $("#pmX").onclick=closeProfiles;a.onclick=ev=>{if(ev.target===a)closeProfiles()};
   a.querySelectorAll(".psel").forEach(b=>b.onclick=()=>{const p=PROFS.find(x=>x.id===b.dataset.id);closeProfiles();if(p.id!==ME.id)useProfile(p)});
   $("#pmRen").onsubmit=ev=>{ev.preventDefault();const n=$("#pmName").value.trim(),e=check(n,ME.id);if(e)return err(e);
-    PROFS.find(x=>x.id===ME.id).pseudo=n;ME.pseudo=n;saveProfs();renderMe();showTab("plan");openProfiles()};
+    const q=PROFS.find(x=>x.id===ME.id);q.pseudo=n;q.named=true;ME.pseudo=n;saveProfs();renderMe();showTab("plan");openProfiles()};
   $("#pmAdd").onsubmit=ev=>{ev.preventDefault();const n=$("#pmNew").value.trim(),e=check(n,"");if(e)return err(e);
-    const p={id:"p"+Date.now(),pseudo:n,color:AVC[PROFS.length%AVC.length],created:new Date().toISOString()};PROFS.push(p);saveProfs();closeProfiles();useProfile(p)};
+    const p={id:"p"+Date.now(),pseudo:n,named:true,color:AVC[PROFS.length%AVC.length],created:new Date().toISOString()};PROFS.push(p);saveProfs();closeProfiles();useProfile(p)};
   if($("#pmDel"))$("#pmDel").onclick=()=>{$("#pmDelBox").innerHTML=`<div class="confirm2"><b>Supprimer « ${esc(ME.pseudo)} » ?</b><span>Ses séances et ses machines enregistrées sur cet appareil seront effacées.</span>
       <span class="prow2"><button class="small-btn danger" id="pmYes" type="button">Supprimer</button><button class="small-btn" id="pmNo" type="button">Annuler</button></span></div>`;
     $("#pmNo").onclick=openProfiles;
@@ -1609,8 +1627,10 @@ $("#go").onclick=startSession;$("#go2").onclick=startSession;$("#heroGo").onclic
 const JOURL=["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"],MOISL=["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
 let TAB="plan";
 function greet(){const h=new Date().getHours();return h<5?"Bonne nuit":h<12?"Bonjour":h<18?"Bon après-midi":"Bonsoir"}
-function renderToday(){const d=new Date();$("#today").textContent=JOURL[d.getDay()].replace(/^./,c=>c.toUpperCase())+" "+d.getDate()+" "+MOISL[d.getMonth()];
-  const T={plan:[greet()+(ME?" "+ME.pseudo:""),"Prêt pour ta séance ?"],mach:["Machines","Reconnais un appareil et apprends à l'utiliser"],prog:["Progrès","Ta régularité, tes badges et tes records"]}[TAB];
+function renderToday(){const d=new Date(),jour=JOURL[d.getDay()].replace(/^./,c=>c.toUpperCase()),dt=d.getDate()+" "+MOISL[d.getMonth()]+" "+d.getFullYear();
+  $("#today").textContent=TAB==="plan"?jour:jour+" "+dt;
+  const T={plan:[dt,""],mach:["Machines","Reconnais un appareil et apprends à l'utiliser"],prog:["Progrès","Ta régularité, tes badges et tes records"]}[TAB];
+  $("#tabSub").hidden=!T[1];
   $("#ltitle").textContent=T[0];$("#tabSub").textContent=T[1];$("#navTitle").textContent=TAB==="plan"?"Coach IA":T[0];$("#hdrLogo").src=LOGO}
 renderToday();
 try{initMachine()}catch(e){}boot();
