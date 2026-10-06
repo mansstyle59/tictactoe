@@ -376,7 +376,7 @@ input[type=range]::-webkit-slider-thumb{margin-top:-13px;width:28px;height:28px;
   box-shadow:0 18px 40px rgba(40,70,200,.28);
   --fig:#FFFFFF;--fig2:rgba(255,255,255,.5);--grd:rgba(255,255,255,.3);--hl:#FFD84D;--mach:rgba(255,255,255,.32);--pad:rgba(255,255,255,.6);--cable:rgba(255,255,255,.9);--shirt:#FFFFFF;--shorts:#1B2030}
 .hero-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.hk{font-size:12.5px;font-weight:700;letter-spacing:.06em;opacity:.85}
+.hk{font-size:12.5px;font-weight:700;letter-spacing:.06em;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .hbrand{font-size:13px;font-weight:700;opacity:.92;white-space:nowrap}
 #heroAnim{width:100%;height:190px;display:block;margin:2px 0}
 .hero-b{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
@@ -450,6 +450,44 @@ header.top{transition:opacity .1s linear;transform-origin:left top}
 .tabsub{display:block;margin:10px 0 0;font-size:15px;color:var(--muted);font-weight:500}
 header.top{padding-top:10px}
 .welcome{gap:14px;padding:30px 22px}
+
+/* accueil repensé */
+.week{padding:14px 14px 12px;display:grid;gap:12px;margin-bottom:-6px}
+.wtop{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.wtop>div{display:grid;gap:2px;min-width:0}.wtop b{font-size:17px;font-weight:700}.wtop>div>span{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:4px}
+.fl{color:#FF6A1A;display:inline-flex}.fl svg{width:14px;height:14px}
+.wring{position:relative;width:48px;height:48px;border:0;background:transparent;padding:0;flex:none}
+.wring svg{width:100%;height:100%;transform:rotate(-90deg)}.wring .rt{fill:none;stroke:var(--accent-soft);stroke-width:5.5}.wring .ra{fill:none;stroke:var(--accent);stroke-width:5.5;stroke-linecap:round}
+.wring span{position:absolute;inset:0;display:grid;place-items:center;font-size:12.5px;font-weight:800}
+.wdays{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.wd{display:grid;justify-items:center;gap:3px;padding:6px 0;border-radius:12px}
+.wd span{font-size:11px;font-weight:600;color:var(--muted)}.wd i{font-style:normal;font-size:16px;font-weight:700;width:32px;height:32px;display:grid;place-items:center;border-radius:50%}
+.wd b{width:6px;height:6px;border-radius:50%;background:transparent}
+.wd.wdone i{background:var(--accent);color:#fff}.wd.wdone b{background:var(--accent)}
+.wd.today i{box-shadow:0 0 0 2px var(--accent)}.wd.today span{color:var(--accent)}
+.wd.fut i{color:var(--muted)}
+.qchips{display:flex;gap:8px;overflow-x:auto;margin:-12px -16px 0;padding:0 16px 2px;scrollbar-width:none}.qchips::-webkit-scrollbar{display:none}
+.qchips button{flex:none;display:flex;align-items:center;gap:6px;border:0;background:var(--glass);border-radius:999px;padding:8px 13px;font-size:14px;font-weight:600;color:var(--ink);min-height:36px}
+.qchips button svg{color:var(--accent)}.qchips .qedit{background:var(--accent-soft);color:var(--accent)}
+.linkbtn{border:0;background:transparent;color:var(--accent);font-weight:600;font-size:15px;padding:4px 0}
+.rail.prog .pcard{flex:none;width:136px;scroll-snap-align:start;border:0;background:var(--glass);border-radius:16px;padding:8px 10px 10px;display:grid;gap:2px;text-align:left;color:var(--ink)}
+.pcard canvas{width:100%;height:84px;display:block;border-radius:10px;background:var(--bg)}
+.pcard .pn{font-size:13.5px;font-weight:700;line-height:1.2;margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pcard .pd{font-size:12.5px;color:var(--accent);font-weight:600}
+.tipday{display:flex;gap:12px;align-items:flex-start;padding:14px}
+.tipi{width:34px;height:34px;flex:none;border-radius:10px;display:grid;place-items:center;color:#fff;background:linear-gradient(140deg,#FFD60A,#FF9F0A)}
+.tipday b{font-size:15px}.tipday p{margin:2px 0 0;font-size:14.5px;color:var(--muted);line-height:1.4}
+/* fenêtre Personnaliser */
+.csheet{position:fixed;inset:0;z-index:45;background:rgba(0,0,0,0);transition:background .26s;display:flex;align-items:flex-end;justify-content:center}
+.csheet.open{background:rgba(0,0,0,.35)}
+.csheet-in{width:100%;max-width:620px;max-height:calc(100% - env(safe-area-inset-top,0px) - 30px);overflow-y:auto;overscroll-behavior:contain;background:var(--bg);
+  border-radius:22px 22px 0 0;padding:0 16px calc(24px + env(safe-area-inset-bottom,0px));transform:translateY(100%);transition:transform .3s cubic-bezier(.2,.9,.3,1);box-shadow:0 -10px 40px rgba(0,0,0,.2)}
+.csheet.open .csheet-in{transform:none}
+.csh-top{position:sticky;top:0;z-index:2;background:var(--bg);padding:8px 0 10px;display:grid;gap:6px;margin-bottom:6px}
+.grab{width:38px;height:5px;border-radius:3px;background:var(--line);justify-self:center}
+.sh-x.pri{background:var(--accent);color:#fff}
+.csheet .sh{scroll-margin-top:70px}
+@media (prefers-reduced-motion:reduce){.csheet-in{transition:none}}
 </style>
 </head>
 <body>
@@ -465,56 +503,23 @@ header.top{padding-top:10px}
 
   <!-- ===== Préparer ===== -->
   <main id="viewPlan" class="sec" style="gap:26px">
-    <section class="stats3" id="stats3" aria-label="Résumé"></section>
+    <section class="week card" id="week" aria-label="Ta semaine"></section>
     <section class="hero" id="hero">
       <div class="hero-top"><span class="hk" id="heroK">SÉANCE DU JOUR</span><span class="hbrand"><img class="logo xs" id="heroLogo" alt="">Coach IA</span></div>
       <canvas id="heroAnim" aria-hidden="true"></canvas>
       <div class="hero-b"><div class="hero-t"><h2 id="heroTitle">Ta séance</h2><p id="heroSub"></p></div><button class="hero-go" id="heroGo">Commencer</button></div>
     </section>
+    <div class="qchips" id="qchips"></div>
+
+    <section class="sec">
+      <div class="exh"><h2>Au programme</h2><button class="linkbtn" id="seeAll">Tout voir</button></div>
+      <div class="rail prog" id="progRail"></div>
+    </section>
     <section class="sec">
       <div class="exh"><h2>Séances express</h2><span class="note" style="padding:0">Touche pour la préparer</span></div>
       <div class="rail" id="rail"></div>
     </section>
-
-    <div class="divider"><h2>Personnaliser</h2><p class="note" style="margin:0;padding:0">Règle ta séance du jour à ta façon.</p></div>
-
-    <section class="sec">
-      <h3 class="sh">Lieu</h3>
-      <div class="seg place" id="place"></div>
-      <p class="note" id="placeNote" style="margin:0"></p>
-    </section>
-
-    <section class="sec">
-      <h3 class="sh">Temps disponible</h3>
-      <div class="timebox">
-        <div class="timeread"><b id="minsOut">45</b><span id="minsTxt">minutes</span></div>
-        <input type="range" id="mins" min="10" max="120" step="5" value="45" aria-label="Durée de la séance en minutes">
-        <div class="chips" id="minChips"></div>
-      </div>
-    </section>
-
-    <section class="sec">
-      <h3 class="sh">Zones à travailler</h3>
-      <div class="chips presets" id="presets"></div>
-      <div class="gtiles" id="groups"></div>
-      <p class="warnmsg" id="gwarn" hidden>Choisis au moins une zone à travailler.</p>
-    </section>
-
-    <section class="sec">
-      <div class="row2" id="lvlEq">
-        <div class="sec" style="gap:6px"><div class="label">Niveau</div>
-          <div class="seg" id="lvl"></div></div>
-        <div class="sec" style="gap:6px" id="eqBox"><div class="label">Matériel</div>
-          <div class="seg" id="eq"></div></div>
-      </div>
-    </section>
-
-    <section class="sec">
-      <h3 class="sh">Ton programme</h3>
-      <div class="plan" id="plan"></div>
-      <button class="cta" id="go2" style="width:100%">Démarrer la séance</button>
-      <p class="note">Touche un exercice pour voir le geste en grand avec ses explications. Les durées sont des estimations : tu avances à ton rythme avec le bouton « J'ai fini ». La voix te guide à chaque étape, pense à monter le son.</p>
-    </section>
+    <section class="tipday card" id="tipday"></section>
   </main>
 
   <!-- ===== Machine ===== -->
@@ -551,6 +556,48 @@ header.top{padding-top:10px}
 
 <div class="player" id="player" data-ph="work" hidden role="dialog" aria-label="Séance en cours"></div>
 <div class="auth" id="auth" hidden role="dialog" aria-modal="true" aria-label="Profil"></div>
+<div class="csheet" id="csheet" hidden role="dialog" aria-modal="true" aria-label="Personnaliser ma séance"><div class="csheet-in" id="csheetIn">
+  <div class="csh-top"><span class="grab"></span><div class="sh-top"><h2>Personnaliser</h2><button class="sh-x pri" id="cDone">Terminé</button></div></div>
+  <div class="sec" style="gap:24px" id="customBody">    
+
+    <section class="sec">
+      <h3 class="sh" id="placeSec">Lieu</h3>
+      <div class="seg place" id="place"></div>
+      <p class="note" id="placeNote" style="margin:0"></p>
+    </section>
+
+    <section class="sec">
+      <h3 class="sh" id="timeSec">Temps disponible</h3>
+      <div class="timebox">
+        <div class="timeread"><b id="minsOut">45</b><span id="minsTxt">minutes</span></div>
+        <input type="range" id="mins" min="10" max="120" step="5" value="45" aria-label="Durée de la séance en minutes">
+        <div class="chips" id="minChips"></div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <h3 class="sh" id="zoneSec">Zones à travailler</h3>
+      <div class="chips presets" id="presets"></div>
+      <div class="gtiles" id="groups"></div>
+      <p class="warnmsg" id="gwarn" hidden>Choisis au moins une zone à travailler.</p>
+    </section>
+
+    <section class="sec">
+      <div class="row2" id="lvlEq">
+        <div class="sec" style="gap:6px" id="lvlSec"><div class="label">Niveau</div>
+          <div class="seg" id="lvl"></div></div>
+        <div class="sec" style="gap:6px" id="eqBox"><div class="label">Matériel</div>
+          <div class="seg" id="eq"></div></div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <h3 class="sh" id="planSec">Ton programme</h3>
+      <div class="plan" id="plan"></div>
+      <button class="cta" id="go2" style="width:100%">Démarrer la séance</button>
+      <p class="note">Touche un exercice pour voir le geste en grand avec ses explications. Les durées sont des estimations : tu avances à ton rythme avec le bouton « J'ai fini ». La voix te guide à chaque étape, pense à monter le son.</p>
+    </section>
+</div></div></div>
 <div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-label="Détail de l'exercice"></div>
 
 <script>
@@ -1062,7 +1109,7 @@ function dTxt(b,withSets){
 }
 function renderHero(){const P=PLAN,h=$("#hero");if(!h)return;unmountAll(h);
   const b=P.blocks[0];const e=b?b.ex:null;const pre=PRESETS.find(p=>p[1].length===P.groups.length&&p[1].every(g=>P.groups.includes(g)));
-  $("#heroK").textContent=(ME?"POUR "+ME.pseudo.toUpperCase()+" · ":"")+"SÉANCE DU JOUR";
+  $("#heroK").textContent="SÉANCE DU JOUR"+(ME?" · "+ME.pseudo.toUpperCase():"");
   $("#heroTitle").textContent=(pre?pre[0]:P.groups.map(g=>GL[g]).join(", "));
   $("#heroSub").textContent=`${fmtMin(P.est)} · ${P.blocks.length} exercices · ${LV[P.lvl].n} · ${P.place==="gym"?"En salle":"À la maison"}`;
   $("#heroLogo").src=LOGO;
@@ -1076,7 +1123,7 @@ function renderPlan(){
    +ph("Échauffement","--ph-warm",P.warm,false,fmtMin(wS))
    +ph("Corps de séance","--ph-work",P.blocks,true,fmtMin(P.est-wS-cS))
    +ph("Étirements","--ph-cool",P.cool,false,fmtMin(cS))+`<div style="height:8px"></div>`;
-  renderHero();
+  renderHero();renderQuick();
   mountAll($("#plan"));$("#plan").querySelectorAll(".item").forEach(it=>{const c=it.querySelector("canvas");if(c)it.onclick=()=>openSheet(exSheet(EXBY[c.dataset.ex]))});
   $("#shuffle").onclick=()=>{seed=Math.floor(Math.random()*1e9);update()};
 }
@@ -1544,7 +1591,7 @@ const ICO={fire:'<svg width="18" height="18" viewBox="0 0 24 24" fill="currentCo
  clock:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'};
 function relDay(d){const a=new Date();a.setHours(0,0,0,0);const b=new Date(d);b.setHours(0,0,0,0);const n=Math.round((a-b)/864e5);return n<=0?"Aujourd'hui":n===1?"Hier":"Il y a "+n+" jours"}
 async function renderHome(){
-  const box=$("#stats3");if(!box)return;const H=await Store.list();
+  renderWeek();const box=$("#stats3");const H=box?await Store.list():[];if(!box){renderRail();return}
   const days=new Set(H.map(h=>dayKey(h.date)));let streak=0;const d=new Date();if(!days.has(dayKey(d)))d.setDate(d.getDate()-1);while(days.has(dayKey(d))){streak++;d.setDate(d.getDate()-1)}
   const wk=new Date();wk.setHours(0,0,0,0);wk.setDate(wk.getDate()-((wk.getDay()+6)%7));const n=H.filter(h=>new Date(h.date)>=wk).length,goal=S.goal||3,f=Math.min(1,n/goal),C=2*Math.PI*15;
   const last=H[0];
@@ -1552,12 +1599,56 @@ async function renderHome(){
    <button class="st3" data-go="prog"><svg class="mring" viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="15" class="rt"/><circle cx="18" cy="18" r="15" class="ra" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-f)}"/></svg><b>${n}<small>/${goal}</small></b><span>cette semaine</span></button>
    <button class="st3" data-go="prog"><span class="st3i clk">${ICO.clock}</span><b class="sm">${last?relDay(last.date):"Aucune"}</b><span>${last?"dernière · "+fmtMin(last.realSec):"dernière séance"}</span></button>`;
   box.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>showTab("prog"));
-  const rail=$("#rail");if(!rail.dataset.done){rail.dataset.done=1;
+  renderRail()}
+function renderRail(){const rail=$("#rail");if(rail&&!rail.dataset.done){rail.dataset.done=1;
     rail.innerHTML=EXPRESS.map((x,i)=>`<button class="xcard" data-i="${i}" style="background:linear-gradient(150deg,${x.c[0]},${x.c[1]})"><canvas data-mv="${x.mv}" data-gear="${x.gear||""}" data-hl="${x.hl.join(",")}" aria-hidden="true"></canvas>
       <span class="xt">${esc(x.t)}</span><span class="xs">${x.m} min · ${x.p==="gym"?"En salle":"Maison"}</span></button>`).join("");
     mountAll(rail);
     rail.querySelectorAll(".xcard").forEach(b=>b.onclick=()=>{const x=EXPRESS[+b.dataset.i];S.mins=x.m;S.groups=x.g.slice();S.place=x.p;seed=Math.floor(Math.random()*1e9);update();
       window.scrollTo({top:0,behavior:"smooth"});const h=$("#hero");h.classList.remove("pulse");void h.offsetWidth;h.classList.add("pulse")})}
+}
+
+/* ---------- accueil : semaine, pastilles, programme, conseil ---------- */
+const TIPS=["Bois un grand verre d'eau avant ta séance : même une petite déshydratation fait baisser la force.",
+ "Le sommeil fait progresser autant que l'entraînement : vise 7 à 9 heures par nuit.",
+ "Mieux vaut 3 séances courtes par semaine qu'une seule longue : la régularité paie.",
+ "Sur chaque répétition, contrôle la descente : c'est là que le muscle travaille le plus.",
+ "Souffle pendant l'effort, inspire en revenant. Ne bloque jamais ta respiration.",
+ "Un jour de repos par semaine aide les muscles à se reconstruire.",
+ "Après la séance, un repas avec des protéines aide la récupération.",
+ "Si un exercice fait mal à une articulation, arrête-le : une gêne musculaire est normale, une douleur vive non.",
+ "Note ton ressenti à la fin : l'appli ajuste la séance suivante pour toi.",
+ "Échauffe-toi toujours, même pour une séance express : tes articulations te remercieront."];
+function openCustom(focusSel){const s=$("#csheet");s.hidden=false;document.body.style.overflow="hidden";
+  requestAnimationFrame(()=>{s.classList.add("open");if(focusSel){const el=$(focusSel);if(el)el.scrollIntoView({block:"start"})}else $("#csheetIn").scrollTop=0})}
+function closeCustom(){const s=$("#csheet");s.classList.remove("open");setTimeout(()=>{s.hidden=true;if($("#player").hidden&&$("#sheet").hidden)document.body.style.overflow=""},260)}
+function renderQuick(){const P=PLAN;if(!P)return;
+  const ic={t:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+   p:P.place==="gym"?'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 7v10M18 7v10M3 9.5v5M21 9.5v5M6 12h12"/></svg>':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7M5 10v10h14V10"/></svg>',
+   l:'<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="13" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="13" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1" opacity="'+(P.lvl>2?1:.3)+'"/></svg>',
+   z:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>'};
+  $("#qchips").innerHTML=`<button data-f="#timeSec">${ic.t}${S.mins<60?S.mins+" min":fmtMin(S.mins*60)}</button><button data-f="#placeSec">${ic.p}${P.place==="gym"?"En salle":"Maison"}</button>
+    <button data-f="#lvlSec">${ic.l}${LV[P.lvl].n}</button><button data-f="#zoneSec">${ic.z}${S.groups.length} zone${S.groups.length>1?"s":""}</button><button class="qedit" data-f="">Modifier</button>`;
+  $("#qchips").querySelectorAll("button").forEach(b=>b.onclick=()=>openCustom(b.dataset.f||null));
+  const r=$("#progRail");unmountAll(r);
+  r.innerHTML=P.blocks.map((b,i)=>`<button class="pcard" data-id="${b.ex.id}"><canvas data-mv="${EXMOV[b.ex.id]||b.ex.mv||"stand"}" data-gear="${GEAR[b.ex.id]||""}" data-hl="${(HLG[b.ex.g]||[]).join(",")}" aria-hidden="true"></canvas>
+    <span class="pn">${i+1}. ${esc(b.ex.name)}</span><span class="pd">${dTxt(b,true)}</span></button>`).join("");
+  mountAll(r);r.querySelectorAll(".pcard").forEach(c=>c.onclick=()=>openSheet(exSheet(EXBY[c.dataset.id])));
+  $("#seeAll").textContent=`Tout voir (${P.blocks.length})`;$("#seeAll").onclick=()=>openCustom("#planSec");
+  const d=new Date(),doy=Math.floor((d-new Date(d.getFullYear(),0,0))/864e5);
+  $("#tipday").innerHTML=`<span class="tipi"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M9 21h6v-1.5H9zM12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg></span><div><b>Conseil du jour</b><p>${TIPS[doy%TIPS.length]}</p></div>`;
+}
+async function renderWeek(){const box=$("#week");if(!box)return;const H=await Store.list();
+  const mon=new Date();mon.setHours(0,0,0,0);mon.setDate(mon.getDate()-((mon.getDay()+6)%7));const today=new Date();today.setHours(0,0,0,0);
+  const L=["L","M","M","J","V","S","D"];let n=0;
+  const cells=L.map((l,i)=>{const d=new Date(mon);d.setDate(mon.getDate()+i);const k=dayKey(d),c=H.filter(h=>dayKey(h.date)===k).length;if(c)n+=c;
+    const isT=d.getTime()===today.getTime(),fut=d>today;return `<div class="wd${c?" wdone":""}${isT?" today":""}${fut?" fut":""}"><span>${l}</span><i>${d.getDate()}</i><b></b></div>`}).join("");
+  const days=new Set(H.map(h=>dayKey(h.date)));let streak=0;const d=new Date();if(!days.has(dayKey(d)))d.setDate(d.getDate()-1);while(days.has(dayKey(d))){streak++;d.setDate(d.getDate()-1)}
+  const goal=S.goal||3,f=Math.min(1,n/goal),C=2*Math.PI*20;
+  box.innerHTML=`<div class="wtop"><div><b>Ta semaine</b><span>${streak?`<span class="fl">${ICO.fire}</span>${streak} jour${streak>1?"s":""} d'affilée`:"Lance ta première séance de la semaine"}</span></div>
+    <button class="wring" aria-label="Objectif : ${n} sur ${goal}"><svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="20" class="rt"/><circle cx="24" cy="24" r="20" class="ra" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-f)}"/></svg><span>${n}/${goal}</span></button></div>
+    <div class="wdays">${cells}</div>`;
+  box.querySelector(".wring").onclick=()=>showTab("prog");
 }
 /* ---------- progrès ---------- */
 const FEEL={facile:"Facile",parfait:"Parfait",dur:"Difficile"};
@@ -1626,7 +1717,8 @@ function showTab(t){
     nb.setAttribute("aria-hidden",p>.5?"false":"true");hd.style.opacity=Math.max(0,1-p*1.7);lt.style.transform=`scale(${1-p*.06})`};
   addEventListener("scroll",()=>{if(!raf)raf=requestAnimationFrame(onS)},{passive:true});onS();$("#navLogo").src=LOGO}
 $("#tabPlan").onclick=()=>showTab("plan");$("#tabMach").onclick=()=>showTab("mach");$("#tabProg").onclick=()=>showTab("prog");
-$("#go").onclick=startSession;$("#go2").onclick=startSession;$("#heroGo").onclick=startSession;
+$("#go").onclick=startSession;$("#go2").onclick=()=>{closeCustom();setTimeout(startSession,280)};
+$("#cDone").onclick=closeCustom;$("#csheet").onclick=ev=>{if(ev.target.id==="csheet")closeCustom()};$("#heroGo").onclick=startSession;
 const JOURL=["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"],MOISL=["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
 let TAB="plan";
 function greet(){const h=new Date().getHours();return h<5?"Bonne nuit":h<12?"Bonjour":h<18?"Bon après-midi":"Bonsoir"}
