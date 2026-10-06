@@ -400,6 +400,25 @@ input[type=range]::-webkit-slider-thumb{margin-top:-13px;width:28px;height:28px;
 .badge span{font-size:11px;line-height:1.2;color:var(--muted)}
 .badge.on{opacity:1;filter:none}.badge.on span{color:var(--ink)}
 .adj{color:var(--accent);font-weight:600}
+
+.stats3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:-8px}
+.st3{display:grid;justify-items:start;gap:2px;text-align:left;border:0;background:var(--glass);border-radius:14px;padding:11px 12px;min-width:0}
+.st3 b{font-size:22px;font-weight:800;line-height:1.1}.st3 b small{font-size:13px;color:var(--muted);font-weight:600}.st3 b.sm{font-size:15px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.st3>span:last-child{font-size:11.5px;color:var(--muted);line-height:1.25}
+.st3i{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;color:#fff;margin-bottom:4px}
+.st3i.fire{background:linear-gradient(140deg,#FF9F0A,#FF375F)}.st3i.clk{background:linear-gradient(140deg,#30D158,#0E9F87)}
+.mring{width:26px;height:26px;transform:rotate(-90deg);margin-bottom:4px}.mring .rt{fill:none;stroke:var(--accent-soft);stroke-width:5}.mring .ra{fill:none;stroke:var(--accent);stroke-width:5;stroke-linecap:round}
+.rail{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;margin-inline:-16px;padding:2px 16px 8px;scrollbar-width:none}
+.rail::-webkit-scrollbar{display:none}
+.xcard{flex:none;width:168px;scroll-snap-align:start;border:0;border-radius:18px;padding:10px 12px 12px;display:grid;gap:2px;text-align:left;color:#fff;
+  box-shadow:0 10px 24px rgba(0,0,0,.14);--fig:#FFFFFF;--fig2:rgba(255,255,255,.5);--grd:rgba(255,255,255,.3);--hl:#FFE066;--mach:rgba(255,255,255,.32);--pad:rgba(255,255,255,.6);--cable:rgba(255,255,255,.9);--shirt:#FFFFFF;--shorts:#1B2030}
+.xcard canvas{width:100%;height:96px;display:block}
+.xt{font-size:16px;font-weight:800;line-height:1.15}.xs{font-size:12.5px;opacity:.9;font-weight:600}
+.divider{display:grid;gap:4px;padding-top:10px;border-top:.5px solid var(--line)}
+.sh{margin:0;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.02em;color:var(--muted);padding-left:4px}
+.hero.pulse{animation:pulse .6s ease}
+@keyframes pulse{40%{transform:scale(1.02)}}
+@media (prefers-reduced-motion:reduce){.hero.pulse{animation:none}}
 </style>
 </head>
 <body>
@@ -416,19 +435,27 @@ input[type=range]::-webkit-slider-thumb{margin-top:-13px;width:28px;height:28px;
 
   <!-- ===== Préparer ===== -->
   <main id="viewPlan" class="sec" style="gap:26px">
+    <section class="stats3" id="stats3" aria-label="Résumé"></section>
     <section class="hero" id="hero">
       <div class="hero-top"><span class="hk" id="heroK">SÉANCE DU JOUR</span><span class="hbrand"><img class="logo xs" id="heroLogo" alt="">Coach IA</span></div>
       <canvas id="heroAnim" aria-hidden="true"></canvas>
       <div class="hero-b"><div class="hero-t"><h2 id="heroTitle">Ta séance</h2><p id="heroSub"></p></div><button class="hero-go" id="heroGo">Commencer</button></div>
     </section>
     <section class="sec">
-      <h2>Où t'entraînes-tu ?</h2>
+      <div class="exh"><h2>Séances express</h2><span class="note" style="padding:0">Touche pour la préparer</span></div>
+      <div class="rail" id="rail"></div>
+    </section>
+
+    <div class="divider"><h2>Personnaliser</h2><p class="note" style="margin:0;padding:0">Règle ta séance du jour à ta façon.</p></div>
+
+    <section class="sec">
+      <h3 class="sh">Lieu</h3>
       <div class="seg place" id="place"></div>
       <p class="note" id="placeNote" style="margin:0"></p>
     </section>
 
     <section class="sec">
-      <h2>Combien de temps as-tu ?</h2>
+      <h3 class="sh">Temps disponible</h3>
       <div class="timebox">
         <div class="timeread"><b id="minsOut">45</b><span id="minsTxt">minutes</span></div>
         <input type="range" id="mins" min="10" max="120" step="5" value="45" aria-label="Durée de la séance en minutes">
@@ -437,7 +464,7 @@ input[type=range]::-webkit-slider-thumb{margin-top:-13px;width:28px;height:28px;
     </section>
 
     <section class="sec">
-      <h2>Qu'est-ce que tu travailles aujourd'hui ?</h2>
+      <h3 class="sh">Zones à travailler</h3>
       <div class="chips presets" id="presets"></div>
       <div class="gtiles" id="groups"></div>
       <p class="warnmsg" id="gwarn" hidden>Choisis au moins une zone à travailler.</p>
@@ -453,7 +480,7 @@ input[type=range]::-webkit-slider-thumb{margin-top:-13px;width:28px;height:28px;
     </section>
 
     <section class="sec">
-      <h2>Ta séance préparée</h2>
+      <h3 class="sh">Ton programme</h3>
       <div class="plan" id="plan"></div>
       <button class="cta" id="go2" style="width:100%">Démarrer la séance</button>
       <p class="note">Touche un exercice pour voir le geste en grand avec ses explications. Les durées sont des estimations : tu avances à ton rythme avec le bouton « J'ai fini ». La voix te guide à chaque étape, pense à monter le son.</p>
@@ -1438,6 +1465,33 @@ function openProfiles(){
 }
 const mine=r=>!ME||r.pid===ME.id||(!r.pid&&ME.first);
 
+/* ---------- accueil ---------- */
+const EXPRESS=[
+ {t:"Abdos express",m:10,g:["abdos"],p:"home",c:["#FF9F0A","#FF375F"],mv:"crunch",hl:["abs"]},
+ {t:"Brûle-graisse",m:15,g:["cardio","abdos"],p:"home",c:["#FF453A","#FF9F0A"],mv:"jacks",hl:["thigh","shin"]},
+ {t:"Haut du corps",m:25,g:["pecs","dos","epaules","bras"],p:"home",c:["#0A84FF","#5E5CE6"],mv:"pushup",hl:["chest","ua"]},
+ {t:"Jambes & fessiers",m:30,g:["jambes","fessiers"],p:"home",c:["#30D158","#0E9F87"],mv:"squat",hl:["thigh","glute"]},
+ {t:"Corps entier",m:45,g:["pecs","dos","jambes","fessiers","abdos"],p:"home",c:["#5E5CE6","#BF5AF2"],mv:"burpee",hl:[]},
+ {t:"Salle : force",m:60,g:["pecs","dos","jambes"],p:"gym",c:["#0A84FF","#64D2FF"],mv:"legpress",gear:"legpress",hl:["thigh"]}];
+const ICO={fire:'<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2c1 3.5-1.5 5-1.5 7.5 0 1.4 1 2.5 2.3 2.5 1.5 0 2.2-1.3 2.2-2.6 2 1.6 3 3.8 3 6.1A6 6 0 0 1 6 15.5C6 10.5 11 8 12 2z"/></svg>',
+ clock:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'};
+function relDay(d){const a=new Date();a.setHours(0,0,0,0);const b=new Date(d);b.setHours(0,0,0,0);const n=Math.round((a-b)/864e5);return n<=0?"Aujourd'hui":n===1?"Hier":"Il y a "+n+" jours"}
+async function renderHome(){
+  const box=$("#stats3");if(!box)return;const H=await Store.list();
+  const days=new Set(H.map(h=>dayKey(h.date)));let streak=0;const d=new Date();if(!days.has(dayKey(d)))d.setDate(d.getDate()-1);while(days.has(dayKey(d))){streak++;d.setDate(d.getDate()-1)}
+  const wk=new Date();wk.setHours(0,0,0,0);wk.setDate(wk.getDate()-((wk.getDay()+6)%7));const n=H.filter(h=>new Date(h.date)>=wk).length,goal=S.goal||3,f=Math.min(1,n/goal),C=2*Math.PI*15;
+  const last=H[0];
+  box.innerHTML=`<button class="st3" data-go="prog"><span class="st3i fire">${ICO.fire}</span><b>${streak}</b><span>jour${streak>1?"s":""} d'affilée</span></button>
+   <button class="st3" data-go="prog"><svg class="mring" viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="15" class="rt"/><circle cx="18" cy="18" r="15" class="ra" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-f)}"/></svg><b>${n}<small>/${goal}</small></b><span>cette semaine</span></button>
+   <button class="st3" data-go="prog"><span class="st3i clk">${ICO.clock}</span><b class="sm">${last?relDay(last.date):"Aucune"}</b><span>${last?"dernière · "+fmtMin(last.realSec):"dernière séance"}</span></button>`;
+  box.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>showTab("prog"));
+  const rail=$("#rail");if(!rail.dataset.done){rail.dataset.done=1;
+    rail.innerHTML=EXPRESS.map((x,i)=>`<button class="xcard" data-i="${i}" style="background:linear-gradient(150deg,${x.c[0]},${x.c[1]})"><canvas data-mv="${x.mv}" data-gear="${x.gear||""}" data-hl="${x.hl.join(",")}" aria-hidden="true"></canvas>
+      <span class="xt">${esc(x.t)}</span><span class="xs">${x.m} min · ${x.p==="gym"?"En salle":"Maison"}</span></button>`).join("");
+    mountAll(rail);
+    rail.querySelectorAll(".xcard").forEach(b=>b.onclick=()=>{const x=EXPRESS[+b.dataset.i];S.mins=x.m;S.groups=x.g.slice();S.place=x.p;seed=Math.floor(Math.random()*1e9);update();
+      window.scrollTo({top:0,behavior:"smooth"});const h=$("#hero");h.classList.remove("pulse");void h.offsetWidth;h.classList.add("pulse")})}
+}
 /* ---------- progrès ---------- */
 const FEEL={facile:"Facile",parfait:"Parfait",dur:"Difficile"};
 const JOURS=["dim.","lun.","mar.","mer.","jeu.","ven.","sam."],MOIS=["janv.","févr.","mars","avr.","mai","juin","juil.","août","sept.","oct.","nov.","déc."];
@@ -1498,7 +1552,7 @@ function showTab(t){
   $("#tabPlan").setAttribute("aria-pressed",t==="plan");$("#tabProg").setAttribute("aria-pressed",t==="prog");$("#tabMach").setAttribute("aria-pressed",t==="mach");
   $("#viewPlan").hidden=t!=="plan";$("#viewProg").hidden=t!=="prog";$("#viewMach").hidden=t!=="mach";$("#startBar").hidden=t!=="plan";
   const TT={plan:"Séance",mach:"Machines",prog:"Progrès"}[t];$("#ltitle").textContent=TT;$("#navTitle").textContent=TT;
-  if(t==="prog")renderProg();if(t==="mach"){renderScans();renderCatalog()}window.scrollTo(0,0);
+  if(t==="plan")renderHome();if(t==="prog")renderProg();if(t==="mach"){renderScans();renderCatalog()}window.scrollTo(0,0);
 }
 addEventListener("scroll",()=>{$("#navbar").classList.toggle("show",scrollY>58)},{passive:true});
 $("#tabPlan").onclick=()=>showTab("plan");$("#tabMach").onclick=()=>showTab("mach");$("#tabProg").onclick=()=>showTab("prog");
