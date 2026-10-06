@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2F8CFF"/><stop offset=".55" stop-color="#3A5BFF"/><stop offset="1" stop-color="#7A4BFF"/>
+    </linearGradient>
+    <radialGradient id="glow" cx=".28" cy=".18" r=".85">
+      <stop offset="0" stop-color="#fff" stop-opacity=".42"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="deep" cx=".85" cy=".95" r=".7">
+      <stop offset="0" stop-color="#1B0F6B" stop-opacity=".45"/><stop offset="1" stop-color="#1B0F6B" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="w" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#DDE5FF"/>
+    </linearGradient>
+    <filter id="sh" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="22" stdDeviation="26" flood-color="#160C5C" flood-opacity=".38"/>
+    </filter>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <rect width="1024" height="1024" fill="url(#deep)"/>
+  <rect width="1024" height="1024" fill="url(#glow)"/>
+  <g transform="translate(500 548) rotate(-35)" fill="url(#w)" filter="url(#sh)">
+    <rect x="-215" y="-27" width="430" height="54" rx="27"/>
+    <rect x="-300" y="-140" width="76" height="280" rx="32"/>
+    <rect x="-372" y="-100" width="62" height="200" rx="26"/>
+    <rect x="224" y="-140" width="76" height="280" rx="32"/>
+    <rect x="310" y="-100" width="62" height="200" rx="26"/>
+  </g>
+  <g fill="#FFFFFF" filter="url(#sh)">
+    <path transform="translate(282 272)" d="M0,-118 C15,-32 32,-15 118,0 C32,15 15,32 0,118 C-15,32 -32,15 -118,0 C-32,-15 -15,-32 0,-118Z"/>
+    <path transform="translate(408 158) scale(.42)" opacity=".9" d="M0,-118 C15,-32 32,-15 118,0 C32,15 15,32 0,118 C-15,32 -32,15 -118,0 C-32,-15 -15,-32 0,-118Z"/>
+  </g>
+</svg>
