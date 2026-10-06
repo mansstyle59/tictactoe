@@ -419,6 +419,13 @@ input[type=range]::-webkit-slider-thumb{margin-top:-13px;width:28px;height:28px;
 .hero.pulse{animation:pulse .6s ease}
 @keyframes pulse{40%{transform:scale(1.02)}}
 @media (prefers-reduced-motion:reduce){.hero.pulse{animation:none}}
+
+.tright{display:flex;align-items:center;gap:10px}
+.thm{display:flex;align-items:center;gap:5px;border:0;border-radius:999px;padding:7px 11px;background:var(--glass);color:var(--ink);font-weight:600;font-size:13px;min-height:36px}
+.thm svg{color:var(--accent)}
+.toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translate(-50%,10px);z-index:70;background:rgba(30,30,32,.92);color:#fff;
+  padding:10px 16px;border-radius:999px;font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;white-space:nowrap}
+.toast.on{opacity:1;transform:translate(-50%,0)}
 </style>
 </head>
 <body>
@@ -428,7 +435,7 @@ input[type=range]::-webkit-slider-thumb{margin-top:-13px;width:28px;height:28px;
   <div class="navbar" id="navbar" aria-hidden="true"><span id="navTitle">Séance</span><button class="me sm" id="meBtn2" tabindex="-1"></button></div>
   <header class="top">
     <div class="today" id="today"></div>
-    <div class="titlerow"><h1 class="ltitle" id="ltitle">Séance</h1><button class="me" id="meBtn" hidden title="Choisir le profil"></button></div>
+    <div class="titlerow"><h1 class="ltitle" id="ltitle">Séance</h1><div class="tright"><button class="thm" id="thmBtn" aria-label="Apparence"></button><button class="me" id="meBtn" hidden title="Choisir le profil"></button></div></div>
     <p class="tabsub" id="tabSub" hidden></p>
   </header>
 
@@ -1465,6 +1472,23 @@ function openProfiles(){
 }
 const mine=r=>!ME||r.pid===ME.id||(!r.pid&&ME.first);
 
+/* ---------- apparence jour / nuit ---------- */
+const ROOT=document.documentElement,HOST_THEME=ROOT.getAttribute("data-theme");
+const THM={auto:{n:"Auto",next:"light",i:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg>'},
+ light:{n:"Jour",next:"dark",i:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>'},
+ dark:{n:"Nuit",next:"auto",i:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z"/></svg>'}};
+let THEME=ls.get("cd-theme","auto");if(!THM[THEME])THEME="auto";
+function applyTheme(m,announce){THEME=m;ls.set("cd-theme",m);
+  if(m==="auto"){if(HOST_THEME)ROOT.setAttribute("data-theme",HOST_THEME);else ROOT.removeAttribute("data-theme")}else ROOT.setAttribute("data-theme",m);
+  const dark=m==="dark"||(m==="auto"&&(HOST_THEME==="dark"||(!HOST_THEME&&matchMedia("(prefers-color-scheme: dark)").matches)));
+  const mt=document.querySelector('meta[name="theme-color"]');if(mt)mt.setAttribute("content",dark?"#000000":"#F2F2F7");
+  const b=$("#thmBtn");if(b){b.innerHTML=THM[m].i+`<span>${THM[m].n}</span>`;b.setAttribute("aria-label","Apparence : "+THM[m].n+". Touche pour changer.")}
+  for(const a of ANIMS)a.colAt=-99;
+  if(announce)toast(m==="auto"?"Apparence automatique, comme ton téléphone":m==="light"?"Mode jour":"Mode nuit")}
+function toast(msg){let el=$("#toast");if(!el){el=document.createElement("div");el.id="toast";el.className="toast";el.setAttribute("role","status");document.body.appendChild(el)}
+  el.textContent=msg;el.classList.remove("on");void el.offsetWidth;el.classList.add("on");clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove("on"),1800)}
+applyTheme(THEME);
+$("#thmBtn").onclick=()=>applyTheme(THM[THEME].next,true);
 /* ---------- accueil ---------- */
 const EXPRESS=[
  {t:"Abdos express",m:10,g:["abdos"],p:"home",c:["#FF9F0A","#FF375F"],mv:"crunch",hl:["abs"]},
