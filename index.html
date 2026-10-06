@@ -426,13 +426,27 @@ input[type=range]::-webkit-slider-thumb{margin-top:-13px;width:28px;height:28px;
 .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translate(-50%,10px);z-index:70;background:rgba(30,30,32,.92);color:#fff;
   padding:10px 16px;border-radius:999px;font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;white-space:nowrap}
 .toast.on{opacity:1;transform:translate(-50%,0)}
+
+/* barre du haut */
+header.top{transition:opacity .1s linear;transform-origin:left top}
+.ltitle{transform-origin:left center;will-change:transform}
+.today{text-transform:none;font-size:13.5px;font-weight:600;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.thm{width:36px;height:36px;min-height:0;padding:0;justify-content:center;border-radius:50%;background:var(--glass);box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.thm svg{width:19px;height:19px}
+.thm.sm,.navbar .me.sm i{width:30px;height:30px}.thm.sm svg{width:16px;height:16px}
+.me i{box-shadow:0 0 0 2px var(--bg),0 0 0 3.5px var(--accent)}
+.navbar{display:flex;align-items:center;justify-content:center;opacity:0;transform:translateY(-8px);transition:none;min-height:calc(env(safe-area-inset-top,0px) + 50px)}
+.navbar .nl{position:absolute;left:16px;width:28px;height:28px;border-radius:8px;box-shadow:0 3px 8px rgba(58,91,255,.3)}
+.navbar .nr{position:absolute;right:16px;display:flex;gap:8px;align-items:center}
+.navbar .me{position:static}
+.navbar #navTitle{font-weight:700;font-size:17px;letter-spacing:-.01em}
 </style>
 </head>
 <body>
 
 
 <div class="wrap" id="app">
-  <div class="navbar" id="navbar" aria-hidden="true"><span id="navTitle">Séance</span><button class="me sm" id="meBtn2" tabindex="-1"></button></div>
+  <div class="navbar" id="navbar" aria-hidden="true"><img class="logo nl" id="navLogo" alt=""><span id="navTitle">Séance</span><div class="nr"><button class="thm sm" id="thmBtn2" tabindex="-1"></button><button class="me sm" id="meBtn2" tabindex="-1"></button></div></div>
   <header class="top">
     <div class="today" id="today"></div>
     <div class="titlerow"><h1 class="ltitle" id="ltitle">Séance</h1><div class="tright"><button class="thm" id="thmBtn" aria-label="Apparence"></button><button class="me" id="meBtn" hidden title="Choisir le profil"></button></div></div>
@@ -1439,7 +1453,7 @@ function useProfile(p){
 }
 function renderMe(){const b=$("#meBtn");b.hidden=!ME;if(!ME)return;
   b.innerHTML=`<i style="background:${ME.color}">${initial(ME.pseudo)}</i>`;b.setAttribute("aria-label","Profil : "+ME.pseudo);b.onclick=openProfiles;
-  const b2=$("#meBtn2");b2.innerHTML=b.innerHTML;b2.onclick=openProfiles;if(PLAN)renderHero()}
+  const b2=$("#meBtn2");b2.innerHTML=b.innerHTML;b2.onclick=openProfiles;if(PLAN)renderHero();if(typeof renderToday==="function")renderToday()}
 function closeProfiles(){const a=$("#auth");a.hidden=true;a.innerHTML="";if($("#player").hidden&&$("#sheet").hidden)document.body.style.overflow=""}
 function openProfiles(){
   const a=$("#auth");a.hidden=false;document.body.style.overflow="hidden";
@@ -1482,13 +1496,13 @@ function applyTheme(m,announce){THEME=m;ls.set("cd-theme",m);
   if(m==="auto"){if(HOST_THEME)ROOT.setAttribute("data-theme",HOST_THEME);else ROOT.removeAttribute("data-theme")}else ROOT.setAttribute("data-theme",m);
   const dark=m==="dark"||(m==="auto"&&(HOST_THEME==="dark"||(!HOST_THEME&&matchMedia("(prefers-color-scheme: dark)").matches)));
   const mt=document.querySelector('meta[name="theme-color"]');if(mt)mt.setAttribute("content",dark?"#000000":"#F2F2F7");
-  const b=$("#thmBtn");if(b){b.innerHTML=THM[m].i+`<span>${THM[m].n}</span>`;b.setAttribute("aria-label","Apparence : "+THM[m].n+". Touche pour changer.")}
+  ["#thmBtn","#thmBtn2"].forEach(s=>{const b=$(s);if(b){b.innerHTML=THM[m].i;b.setAttribute("aria-label","Apparence : "+THM[m].n+". Touche pour changer.");b.title="Apparence : "+THM[m].n}});
   for(const a of ANIMS)a.colAt=-99;
   if(announce)toast(m==="auto"?"Apparence automatique, comme ton téléphone":m==="light"?"Mode jour":"Mode nuit")}
 function toast(msg){let el=$("#toast");if(!el){el=document.createElement("div");el.id="toast";el.className="toast";el.setAttribute("role","status");document.body.appendChild(el)}
   el.textContent=msg;el.classList.remove("on");void el.offsetWidth;el.classList.add("on");clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove("on"),1800)}
 applyTheme(THEME);
-$("#thmBtn").onclick=()=>applyTheme(THM[THEME].next,true);
+$("#thmBtn").onclick=$("#thmBtn2").onclick=()=>applyTheme(THM[THEME].next,true);
 /* ---------- accueil ---------- */
 const EXPRESS=[
  {t:"Abdos express",m:10,g:["abdos"],p:"home",c:["#FF9F0A","#FF375F"],mv:"crunch",hl:["abs"]},
@@ -1578,10 +1592,15 @@ function showTab(t){
   const TT={plan:"Séance",mach:"Machines",prog:"Progrès"}[t];$("#ltitle").textContent=TT;$("#navTitle").textContent=TT;
   if(t==="plan")renderHome();if(t==="prog")renderProg();if(t==="mach"){renderScans();renderCatalog()}window.scrollTo(0,0);
 }
-addEventListener("scroll",()=>{$("#navbar").classList.toggle("show",scrollY>58)},{passive:true});
+{const nb=$("#navbar"),lt=$("#ltitle"),hd=document.querySelector("header.top");let raf=0;
+  const onS=()=>{raf=0;const p=Math.max(0,Math.min(1,(scrollY-18)/42));nb.style.opacity=p;nb.style.transform=`translateY(${(1-p)*-8}px)`;nb.classList.toggle("show",p>.5);
+    nb.setAttribute("aria-hidden",p>.5?"false":"true");hd.style.opacity=Math.max(0,1-p*1.7);lt.style.transform=`scale(${1-p*.06})`};
+  addEventListener("scroll",()=>{if(!raf)raf=requestAnimationFrame(onS)},{passive:true});onS();$("#navLogo").src=LOGO}
 $("#tabPlan").onclick=()=>showTab("plan");$("#tabMach").onclick=()=>showTab("mach");$("#tabProg").onclick=()=>showTab("prog");
 $("#go").onclick=startSession;$("#go2").onclick=startSession;$("#heroGo").onclick=startSession;
-{const d=new Date();$("#today").textContent=JOURS[d.getDay()].replace(".","")+" "+d.getDate()+" "+MOIS[d.getMonth()]}
+function renderToday(){const d=new Date(),h=d.getHours();const g=h<5?"Bonne nuit":h<12?"Bonjour":h<18?"Bon après-midi":"Bonsoir";
+  $("#today").textContent=JOURS[d.getDay()]+" "+d.getDate()+" "+MOIS[d.getMonth()]+" · "+g+(ME?" "+ME.pseudo:"")}
+renderToday();
 try{initMachine()}catch(e){}boot();
 </script>
 
