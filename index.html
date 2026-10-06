@@ -563,8 +563,8 @@ const ST={t:180,ua:4,fa:4,th:0,sh:0,cv:0};
 const M=(o)=>Object.assign({},ST,o);
 const SUP={sup:1,t:90,ua:-90,fa:-90,th:-135,sh:-45,c:[["hip",0],["foot",0]]};      // sur le dos, tête à droite
 const PRONE={t:90,ua:90,fa:90,th:-90,sh:-90,c:[["hip",0]]};                      // à plat ventre
-const PLANK={t:95,ua:0,fa:0,th:-85,sh:-85,c:[["foot",0],["hand",0]]};
-const FPLANK={t:95,ua:0,fa:90,th:-85,sh:-85,c:[["foot",0],["elbow",0]]};
+const PLANK={t:95,ua:0,fa:0,th:-85,sh:-85,ft:2,c:[["toe",0],["hand",0]]};
+const FPLANK={t:95,ua:0,fa:90,th:-85,sh:-85,ft:2,c:[["toe",0],["elbow",0]]};
 const QUAD={t:90,ua:0,fa:0,th:0,sh:-90,c:[["hand",0],["knee",0]]};
 const MOV={
  jacks:{f:1,k:[M({ua:8,fa:8,th:4,sh:4}),M({ua:165,fa:175,th:22,sh:22,up:10})],sp:1.4},
@@ -582,20 +582,20 @@ const MOV={
  calf:{k:[M({ua:0,fa:0}),M({ua:0,fa:0,ft:150})],sp:1},
  pushup:{k:[Object.assign({},PLANK),Object.assign({},PLANK,{ua:-125,fa:5})],sp:.8},
  kneepush:{k:[Object.assign({},PLANK,{sh:-150,c:[["knee",0],["hand",0]]}),Object.assign({},PLANK,{ua:-125,fa:5,sh:-150,c:[["knee",0],["hand",0]]})],sp:.8},
- incline:{box:"hand",k:[Object.assign({},PLANK,{c:[["foot",0],["hand",30]]}),Object.assign({},PLANK,{ua:-125,fa:5,c:[["foot",0],["hand",30]]})],sp:.8},
- decline:{box:"foot",k:[Object.assign({},PLANK,{c:[["hand",0],["foot",30]]}),Object.assign({},PLANK,{ua:-125,fa:5,c:[["hand",0],["foot",30]]})],sp:.8},
+ incline:{box:"hand",k:[Object.assign({},PLANK,{c:[["toe",0],["hand",30]]}),Object.assign({},PLANK,{ua:-125,fa:5,c:[["toe",0],["hand",30]]})],sp:.8},
+ decline:{box:"toe",k:[Object.assign({},PLANK,{c:[["hand",0],["toe",30]]}),Object.assign({},PLANK,{ua:-125,fa:5,c:[["hand",0],["toe",30]]})],sp:.8},
  pike:{k:[{t:45,ua:45,fa:45,th:-45,sh:-45,c:[["foot",0],["hand",0]]},{t:60,ua:-40,fa:30,th:-30,sh:-30,c:[["foot",0],["hand",0]]}],sp:.7},
  dips:{box:"hand",k:[M({ua:-15,fa:-15,th:85,sh:0,c:[["foot",0],["hand",32]]}),M({ua:-75,fa:5,th:85,sh:62,c:[["foot",0],["hand",32]]})],sp:.7},
  plank:{k:[Object.assign({},FPLANK),Object.assign({},FPLANK,{t:96})],sp:.4},
  sideplank:{f:1,rot:72,k:[M({ua:-108,fa:-108,ub:-72,fb:-162,th:0,sh:0,tb:0,sb:0,c:[["footB",0],["elbowB",0]]}),M({ua:-104,fa:-104,ub:-72,fb:-162,th:0,sh:0,tb:0,sb:0,c:[["footB",0],["elbowB",0]]})],sp:.4},
- tap:{k:[Object.assign({},PLANK,{c:[["foot",0],["handB",0]]}),Object.assign({},PLANK,{ua:60,fa:160,ub:0,fb:0,c:[["foot",0],["handB",0]]})],sp:1},
+ tap:{k:[Object.assign({},PLANK,{c:[["toe",0],["handB",0]]}),Object.assign({},PLANK,{ua:60,fa:160,ub:0,fb:0,c:[["toe",0],["handB",0]]})],sp:1},
  updown:{k:[Object.assign({},FPLANK),Object.assign({},PLANK)],sp:.6},
- climber:{k:[Object.assign({},PLANK,{th:40,sh:-60,tb:-85,sb:-85,c:[["footB",0],["hand",0]]}),Object.assign({},PLANK,{tb:40,sb:-60,c:[["foot",0],["hand",0]]})],sp:2},
+ climber:{k:[Object.assign({},PLANK,{th:40,sh:-60,tb:-85,sb:-85,c:[["toeB",0],["hand",0]]}),Object.assign({},PLANK,{tb:40,sb:-60,c:[["toe",0],["hand",0]]})],sp:2},
  burpee:{cyc:1,k:[M({ua:0,fa:0}),M({t:140,ua:20,fa:0,th:95,sh:-40}),Object.assign({},PLANK),M({t:140,ua:20,fa:0,th:95,sh:-40}),M({ua:170,fa:175,up:14,ft:140}),M({ua:0,fa:0})],sp:.55},
  crunch:{k:[Object.assign({},SUP,{ua:-90,fa:-90}),Object.assign({},SUP,{t:112,cv:38,ua:-105,fa:-105})],sp:.8},
  bike:{k:[Object.assign({},SUP,{t:110,cv:26,ua:150,fa:-40,th:-150,sh:-70,tb:-100,sb:-100,c:[["hip",0]]}),Object.assign({},SUP,{t:110,cv:26,ua:150,fa:-40,tb:-150,sb:-70,th:-100,sh:-100,c:[["hip",0]]})],sp:1},
  legraise:{k:[Object.assign({},SUP,{th:-100,sh:-100,c:[["hip",0],["neck",0]]}),Object.assign({},SUP,{th:-178,sh:-178,c:[["hip",0],["neck",0]]})],sp:.6},
- twist:{k:[{t:-155,ua:120,fa:100,th:125,sh:65,c:[["hip",0]]},{t:-155,ua:-40,fa:-10,ub:80,fb:60,th:125,sh:65,c:[["hip",0]]}],sp:1},
+ twist:{f:1,k:[M({t:174,lf:.62,ua:62,fa:104,ub:-22,fb:-64,th:152,sh:28,c:[["hip",0]]}),M({t:186,lf:.62,ua:-22,fa:-64,ub:62,fb:104,th:152,sh:28,c:[["hip",0]]})],sp:.9},
  bridge:{k:[Object.assign({},SUP,{c:[["neck",0],["foot",0]]}),Object.assign({},SUP,{t:70,th:-105,sh:-20,c:[["neck",0],["foot",0]]})],sp:.7},
  bridge1:{k:[Object.assign({},SUP,{tb:-160,sb:-160,c:[["neck",0],["foot",0]]}),Object.assign({},SUP,{t:70,th:-105,sh:-20,tb:-115,sb:-115,c:[["neck",0],["foot",0]]})],sp:.7},
  superman:{k:[Object.assign({},PRONE),Object.assign({},PRONE,{t:100,cv:-18,ua:105,fa:105,th:-102,sh:-102})],sp:.6},
@@ -696,8 +696,8 @@ function posePts(p,front){
   P.sh1=sh1;P.sh2=sh2;P.hp1=hp1;P.hp2=hp2;
   P.elbow=add(sh1,0,L.ua*al,front?ua:ua);P.hand=add(P.elbow,0,L.fa*al,fa);
   P.elbowB=add(sh2,0,L.ua*al,mir(ub));P.handB=add(P.elbowB,0,L.fa*al,mir(fb));
-  P.knee=add(hp1,0,L.th,th);P.foot=add(P.knee,0,L.sh,sh);P.toe=front?P.foot:add(P.foot,0,L.ft,ft);
-  P.kneeB=add(hp2,0,L.th,mir(tb));P.footB=add(P.kneeB,0,L.sh,mir(sb));P.toeB=front?P.footB:add(P.footB,0,L.ft,ft);
+  const lf=p.lf||1;P.knee=add(hp1,0,L.th*lf,th);P.foot=add(P.knee,0,L.sh*lf,sh);P.toe=front?P.foot:add(P.foot,0,L.ft,ft);
+  P.kneeB=add(hp2,0,L.th*lf,mir(tb));P.footB=add(P.kneeB,0,L.sh*lf,mir(sb));P.toeB=front?P.footB:add(P.footB,0,L.ft,ft);
   return P;
 }
 function placePose(p,m){
@@ -868,7 +868,10 @@ function drawMotion(a,time){
   const lp=(p,q,k)=>[p[0]+(q[0]-p[0])*k,p[1]+(q[1]-p[1])*k];
   const ARM=(s,e,hd,isFar)=>{const sk=dk(cSkin,isFar),sh=dk(cShirt,isFar);
     cap(s,e,4.9,3.7,sk,true);cap(e,hd,3.7,2.6,sk,true);
-    const u=[hd[0]-e[0],hd[1]-e[1]],l=Math.hypot(...u)||1;dot([hd[0]+u[0]/l*1.3,hd[1]+u[1]/l*1.3],3.2,shade(sk,-.07));
+    const u=[hd[0]-e[0],hd[1]-e[1]],l=Math.hypot(...u)||1;
+    const sup2=!m.f&&(hd[1]>-4||(m.box==="hand"&&Math.abs(hd[1]-(P.hand[1]))<1&&hd===P.hand)||(m.box==="hand"&&hd===P.handB));
+    if(sup2){const fy=hd[1]>-4?Math.min(hd[1]+1.6,0):hd[1]+1.6;cap([hd[0]-2.2,fy-.6],[hd[0]+5.6,fy],2.6,1.9,shade(sk,-.07))}
+    else dot([hd[0]+u[0]/l*1.3,hd[1]+u[1]/l*1.3],3.2,shade(sk,-.07));
     cap(s,lp(s,e,.46),6,4.9,sh,true);
     if(HL.has("ua"))hlOver(()=>cap(lp(s,e,.3),e,4.7,3.6,hlc));
     if(HL.has("fa"))hlOver(()=>cap(e,hd,3.6,2.5,hlc));
