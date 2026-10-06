@@ -440,6 +440,15 @@ header.top{transition:opacity .1s linear;transform-origin:left top}
 .navbar .nr{position:absolute;right:16px;display:flex;gap:8px;align-items:center}
 .navbar .me{position:static}
 .navbar #navTitle{font-weight:700;font-size:17px;letter-spacing:-.01em}
+
+.titlerow{align-items:center}
+.tleft{display:flex;align-items:center;gap:12px;min-width:0}
+.logo.hdr{width:48px;height:48px;border-radius:13px;flex:none;box-shadow:0 6px 16px rgba(58,91,255,.3)}
+.ttxt{display:grid;min-width:0}
+.ttxt .today{font-size:13px;font-weight:600;color:var(--muted)}
+.ltitle{font-size:clamp(19px,5.6vw,26px);font-weight:800;line-height:1.15;letter-spacing:-.015em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tabsub{display:block;margin:10px 0 0;font-size:15px;color:var(--muted);font-weight:500}
+header.top{padding-top:10px}
 </style>
 </head>
 <body>
@@ -448,9 +457,8 @@ header.top{transition:opacity .1s linear;transform-origin:left top}
 <div class="wrap" id="app">
   <div class="navbar" id="navbar" aria-hidden="true"><img class="logo nl" id="navLogo" alt=""><span id="navTitle">Séance</span><div class="nr"><button class="thm sm" id="thmBtn2" tabindex="-1"></button><button class="me sm" id="meBtn2" tabindex="-1"></button></div></div>
   <header class="top">
-    <div class="today" id="today"></div>
-    <div class="titlerow"><h1 class="ltitle" id="ltitle">Séance</h1><div class="tright"><button class="thm" id="thmBtn" aria-label="Apparence"></button><button class="me" id="meBtn" hidden title="Choisir le profil"></button></div></div>
-    <p class="tabsub" id="tabSub" hidden></p>
+    <div class="titlerow"><div class="tleft"><img class="logo hdr" id="hdrLogo" alt=""><div class="ttxt"><div class="today" id="today"></div><h1 class="ltitle" id="ltitle">Coach IA</h1></div></div><div class="tright"><button class="thm" id="thmBtn" aria-label="Apparence"></button><button class="me" id="meBtn" hidden title="Choisir le profil"></button></div></div>
+    <p class="tabsub" id="tabSub">Prêt pour ta séance ?</p>
   </header>
 
 
@@ -1589,7 +1597,7 @@ function bindGoal(){const m=$("#gMinus"),p=$("#gPlus");if(!m)return;m.onclick=()
 function showTab(t){
   $("#tabPlan").setAttribute("aria-pressed",t==="plan");$("#tabProg").setAttribute("aria-pressed",t==="prog");$("#tabMach").setAttribute("aria-pressed",t==="mach");
   $("#viewPlan").hidden=t!=="plan";$("#viewProg").hidden=t!=="prog";$("#viewMach").hidden=t!=="mach";$("#startBar").hidden=t!=="plan";
-  const TT={plan:"Séance",mach:"Machines",prog:"Progrès"}[t];$("#ltitle").textContent=TT;$("#navTitle").textContent=TT;
+  TAB=t;if(typeof renderToday==="function")renderToday();
   if(t==="plan")renderHome();if(t==="prog")renderProg();if(t==="mach"){renderScans();renderCatalog()}window.scrollTo(0,0);
 }
 {const nb=$("#navbar"),lt=$("#ltitle"),hd=document.querySelector("header.top");let raf=0;
@@ -1598,8 +1606,12 @@ function showTab(t){
   addEventListener("scroll",()=>{if(!raf)raf=requestAnimationFrame(onS)},{passive:true});onS();$("#navLogo").src=LOGO}
 $("#tabPlan").onclick=()=>showTab("plan");$("#tabMach").onclick=()=>showTab("mach");$("#tabProg").onclick=()=>showTab("prog");
 $("#go").onclick=startSession;$("#go2").onclick=startSession;$("#heroGo").onclick=startSession;
-function renderToday(){const d=new Date(),h=d.getHours();const g=h<5?"Bonne nuit":h<12?"Bonjour":h<18?"Bon après-midi":"Bonsoir";
-  $("#today").textContent=JOURS[d.getDay()]+" "+d.getDate()+" "+MOIS[d.getMonth()]+" · "+g+(ME?" "+ME.pseudo:"")}
+const JOURL=["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"],MOISL=["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+let TAB="plan";
+function greet(){const h=new Date().getHours();return h<5?"Bonne nuit":h<12?"Bonjour":h<18?"Bon après-midi":"Bonsoir"}
+function renderToday(){const d=new Date();$("#today").textContent=JOURL[d.getDay()].replace(/^./,c=>c.toUpperCase())+" "+d.getDate()+" "+MOISL[d.getMonth()];
+  const T={plan:[greet()+(ME?" "+ME.pseudo:""),"Prêt pour ta séance ?"],mach:["Machines","Reconnais un appareil et apprends à l'utiliser"],prog:["Progrès","Ta régularité, tes badges et tes records"]}[TAB];
+  $("#ltitle").textContent=T[0];$("#tabSub").textContent=T[1];$("#navTitle").textContent=TAB==="plan"?"Coach IA":T[0];$("#hdrLogo").src=LOGO}
 renderToday();
 try{initMachine()}catch(e){}boot();
 </script>
