@@ -304,21 +304,107 @@ header.top{position:relative}
 .me svg{opacity:.55;flex:none}
 @media (prefers-reduced-motion:reduce){*,body::before{transition:none!important;animation:none!important}}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){:root{--glass:rgba(255,255,255,.9)}.player .pglass,.psub button{background:rgba(255,255,255,.22)}}
+
+/* ===== Style iOS / App Store ===== */
+:root{--bg:#F2F2F7;--ink:#000;--muted:rgba(60,60,67,.6);--line:rgba(60,60,67,.16);--glass:#FFFFFF;--glass-hi:#FFFFFF;--edge:transparent;--edge-lo:transparent;
+  --shade:0 0 0 transparent;--accent:#007AFF;--accent2:#5E5CE6;--accent-soft:rgba(0,122,255,.1);--sheetbg:#F2F2F7;--bar:rgba(249,249,249,.82);--segbg:rgba(118,118,128,.12);--segon:#FFFFFF;
+  --display:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,system-ui,sans-serif;--fig:#007AFF;--fig2:rgba(0,122,255,.36)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#000;--ink:#fff;--muted:rgba(235,235,245,.6);--line:rgba(84,84,88,.55);--glass:#1C1C1E;--glass-hi:#2C2C2E;
+  --accent:#0A84FF;--accent2:#5E5CE6;--accent-soft:rgba(10,132,255,.18);--sheetbg:#1C1C1E;--bar:rgba(22,22,24,.8);--segbg:rgba(118,118,128,.24);--segon:#636366;--fig:#0A84FF;--fig2:rgba(10,132,255,.4)}}
+:root[data-theme="dark"]{--bg:#000;--ink:#fff;--muted:rgba(235,235,245,.6);--line:rgba(84,84,88,.55);--glass:#1C1C1E;--glass-hi:#2C2C2E;
+  --accent:#0A84FF;--accent2:#5E5CE6;--accent-soft:rgba(10,132,255,.18);--sheetbg:#1C1C1E;--bar:rgba(22,22,24,.8);--segbg:rgba(118,118,128,.24);--segon:#636366;--fig:#0A84FF;--fig2:rgba(10,132,255,.4)}
+body{font-size:17px;letter-spacing:-.01em}
+body::before{display:none}
+.timebox,.plan,.tile,.card,.chip,.ghost,.setcard,.tip,.gtile,.psel{-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none;border:0}
+.wrap{padding-block:4px 120px;gap:26px}
+.today{order:0;font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.02em;text-transform:uppercase}
+.titlerow{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.ltitle{margin:0;font-family:var(--display);font-size:34px;font-weight:800;letter-spacing:.005em;line-height:1.1}
+header.top{gap:0;padding-top:8px}
+.me{position:static;padding:0;background:transparent!important;box-shadow:none!important;border:0}
+.me i{width:36px;height:36px;font-size:16px}.me.sm i{width:30px;height:30px;font-size:13px}
+.navbar{position:fixed;top:0;left:0;right:0;z-index:14;display:flex;justify-content:center;align-items:center;padding:calc(env(safe-area-inset-top,0px) + 10px) 16px 10px;
+  background:var(--bar);-webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);border-bottom:.5px solid var(--line);
+  font-weight:600;font-size:17px;opacity:0;transform:translateY(-6px);pointer-events:none;transition:opacity .2s,transform .2s}
+.navbar.show{opacity:1;transform:none;pointer-events:auto}.navbar .me{position:absolute;right:16px}
+h2{font-family:var(--display);font-size:22px;font-weight:700;letter-spacing:-.01em}
+.label{font-size:13px;font-weight:400;letter-spacing:0;text-transform:uppercase;color:var(--muted)}
+.note{font-size:13px}
+.timebox,.plan,.card,.tile,.setcard{border-radius:14px}
+.seg{background:var(--segbg)!important;border-radius:10px;padding:2px;gap:0;box-shadow:none;border:0}
+.seg button{border-radius:8px;min-height:34px;font-size:14px;font-weight:600;color:var(--ink);padding:7px 4px}
+.seg button[aria-pressed="true"]{background:var(--segon);color:var(--ink);box-shadow:0 3px 8px rgba(0,0,0,.12),0 3px 1px rgba(0,0,0,.04)}
+.chip{background:var(--glass);border-radius:999px;font-weight:600;color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--accent);color:#fff;box-shadow:none}
+.presets .chip{font-weight:600}
+input[type=range]::-webkit-slider-runnable-track{background:var(--accent);height:4px;border-radius:4px;opacity:1}
+input[type=range]::-webkit-slider-thumb{margin-top:-13px;width:28px;height:28px;box-shadow:0 .5px 4px rgba(0,0,0,.12),0 6px 13px rgba(0,0,0,.12)}
+.timeread b{font-family:var(--display);font-weight:700;font-size:54px}
+.cta{background:var(--accent);box-shadow:none;font-family:var(--body);font-size:17px;font-weight:600;letter-spacing:0;padding:15px;border-radius:14px}
+.cta::before{display:none}
+.cta:disabled{opacity:.4}
+.start{display:none!important}
+.gtile{background:var(--glass);border:1.5px solid transparent;border-radius:14px}
+.gtile[aria-pressed="true"]{border-color:var(--accent);background:var(--glass);color:var(--accent);box-shadow:none}
+.gtile[aria-pressed="true"]::after{background:var(--accent)}
+.gtile[aria-pressed="false"] canvas{opacity:.85}
+.thumb{border-radius:10px;background:var(--bg)}
+.item{padding:10px 0}.phase{padding:12px 16px 4px}.planhead{padding:14px 16px}
+.planhead .sum b{font-family:var(--display);font-size:20px;font-weight:700}
+.ghost{background:var(--accent-soft);color:var(--accent);border-radius:999px;font-weight:600}
+.tabbar{background:var(--bar)!important;-webkit-backdrop-filter:blur(24px) saturate(180%)!important;backdrop-filter:blur(24px) saturate(180%)!important;
+  box-shadow:0 10px 30px rgba(0,0,0,.14),inset 0 0 0 .5px var(--line)!important;width:min(calc(100vw - 40px),360px)}
+.tabbar button{font-size:10.5px;font-weight:600;color:rgba(128,128,133,1)}
+.tabbar button[aria-pressed="true"]{color:var(--accent);background:var(--accent-soft);box-shadow:none}
+.tabbar svg{width:25px;height:25px}
+.mtag{background:var(--accent-soft);color:var(--accent)}
+.hdate{background:var(--accent-soft);color:var(--accent)}
+.tip{background:var(--glass);border-radius:14px}
+.authcard{background:var(--sheetbg);box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.psel{background:var(--glass);border:1.5px solid transparent;border-radius:14px}
+.psel.on{border-color:var(--accent);background:var(--glass)}
+.fld input,.mctx input{background:var(--glass);border:0;box-shadow:none;border-radius:12px}
+.small-btn{background:var(--accent-soft);color:var(--accent);box-shadow:none;font-weight:600}
+.mbtn.pri{background:var(--accent);box-shadow:none}.mbtn.sec2{background:var(--accent-soft);color:var(--accent);box-shadow:none}
+.mhero .lens{background:var(--accent);box-shadow:none;border-radius:22px}
+.about{display:flex;gap:12px;align-items:center;font-size:14px;color:var(--muted);border-top:.5px solid var(--line);padding-top:12px}.about b{color:var(--ink)}
+.about .logo{width:44px;height:44px;border-radius:11px}
+.logo.xs{width:20px;height:20px;border-radius:5px;margin-right:6px;vertical-align:-4px}
+/* carte « séance du jour » façon App Store */
+.hero{position:relative;overflow:hidden;border-radius:22px;padding:18px 18px 16px;color:#fff;display:grid;gap:4px;
+  background:radial-gradient(120% 90% at 85% 0%,rgba(255,255,255,.28),transparent 55%),linear-gradient(140deg,#0A84FF 0%,#3D5BFF 55%,#7A4BFF 100%);
+  box-shadow:0 18px 40px rgba(40,70,200,.28);
+  --fig:#FFFFFF;--fig2:rgba(255,255,255,.5);--grd:rgba(255,255,255,.3);--hl:#FFD84D;--mach:rgba(255,255,255,.32);--pad:rgba(255,255,255,.6);--cable:rgba(255,255,255,.9);--shirt:#FFFFFF;--shorts:#1B2030}
+.hero-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.hk{font-size:12.5px;font-weight:700;letter-spacing:.06em;opacity:.85}
+.hbrand{font-size:13px;font-weight:700;opacity:.92;white-space:nowrap}
+#heroAnim{width:100%;height:190px;display:block;margin:2px 0}
+.hero-b{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.hero-t{min-width:0}.hero-t h2{font-size:26px;font-weight:800;line-height:1.1;color:#fff;text-wrap:balance}
+.hero-t p{margin:4px 0 0;font-size:14px;opacity:.9}
+.hero-go{flex:none;border:0;border-radius:999px;background:#fff;color:#0A60FF;font-weight:800;font-size:15px;padding:9px 18px;min-height:36px;letter-spacing:.01em}
+.hero-go:disabled{opacity:.5}
 </style>
 </head>
 <body>
 
 
 <div class="wrap" id="app">
+  <div class="navbar" id="navbar" aria-hidden="true"><span id="navTitle">Séance</span><button class="me sm" id="meBtn2" tabindex="-1"></button></div>
   <header class="top">
-    <div class="brand"><img class="logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDI0IDEwMjQiIHdpZHRoPSIxMDI0IiBoZWlnaHQ9IjEwMjQiPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJiZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiMyRjhDRkYiLz48c3RvcCBvZmZzZXQ9Ii41NSIgc3RvcC1jb2xvcj0iIzNBNUJGRiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzdBNEJGRiIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0iZ2xvdyIgY3g9Ii4yOCIgY3k9Ii4xOCIgcj0iLjg1Ij4KICAgICAgPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjZmZmIiBzdG9wLW9wYWNpdHk9Ii40MiIvPjxzdG9wIG9mZnNldD0iLjU1IiBzdG9wLWNvbG9yPSIjZmZmIiBzdG9wLW9wYWNpdHk9IjAiLz4KICAgIDwvcmFkaWFsR3JhZGllbnQ+CiAgICA8cmFkaWFsR3JhZGllbnQgaWQ9ImRlZXAiIGN4PSIuODUiIGN5PSIuOTUiIHI9Ii43Ij4KICAgICAgPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjMUIwRjZCIiBzdG9wLW9wYWNpdHk9Ii40NSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzFCMEY2QiIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJ3IiB4MT0iMCIgeTE9IjAiIHgyPSIwIiB5Mj0iMSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI0ZGRkZGRiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI0RERTVGRiIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxmaWx0ZXIgaWQ9InNoIiB4PSItMzAlIiB5PSItMzAlIiB3aWR0aD0iMTYwJSIgaGVpZ2h0PSIxNjAlIj4KICAgICAgPGZlRHJvcFNoYWRvdyBkeD0iMCIgZHk9IjIyIiBzdGREZXZpYXRpb249IjI2IiBmbG9vZC1jb2xvcj0iIzE2MEM1QyIgZmxvb2Qtb3BhY2l0eT0iLjM4Ii8+CiAgICA8L2ZpbHRlcj4KICA8L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjEwMjQiIGhlaWdodD0iMTAyNCIgZmlsbD0idXJsKCNiZykiLz4KICA8cmVjdCB3aWR0aD0iMTAyNCIgaGVpZ2h0PSIxMDI0IiBmaWxsPSJ1cmwoI2RlZXApIi8+CiAgPHJlY3Qgd2lkdGg9IjEwMjQiIGhlaWdodD0iMTAyNCIgZmlsbD0idXJsKCNnbG93KSIvPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDUwMCA1NDgpIHJvdGF0ZSgtMzUpIiBmaWxsPSJ1cmwoI3cpIiBmaWx0ZXI9InVybCgjc2gpIj4KICAgIDxyZWN0IHg9Ii0yMTUiIHk9Ii0yNyIgd2lkdGg9IjQzMCIgaGVpZ2h0PSI1NCIgcng9IjI3Ii8+CiAgICA8cmVjdCB4PSItMzAwIiB5PSItMTQwIiB3aWR0aD0iNzYiIGhlaWdodD0iMjgwIiByeD0iMzIiLz4KICAgIDxyZWN0IHg9Ii0zNzIiIHk9Ii0xMDAiIHdpZHRoPSI2MiIgaGVpZ2h0PSIyMDAiIHJ4PSIyNiIvPgogICAgPHJlY3QgeD0iMjI0IiB5PSItMTQwIiB3aWR0aD0iNzYiIGhlaWdodD0iMjgwIiByeD0iMzIiLz4KICAgIDxyZWN0IHg9IjMxMCIgeT0iLTEwMCIgd2lkdGg9IjYyIiBoZWlnaHQ9IjIwMCIgcng9IjI2Ii8+CiAgPC9nPgogIDxnIGZpbGw9IiNGRkZGRkYiIGZpbHRlcj0idXJsKCNzaCkiPgogICAgPHBhdGggdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMjgyIDI3MikiIGQ9Ik0wLC0xMTggQzE1LC0zMiAzMiwtMTUgMTE4LDAgQzMyLDE1IDE1LDMyIDAsMTE4IEMtMTUsMzIgLTMyLDE1IC0xMTgsMCBDLTMyLC0xNSAtMTUsLTMyIDAsLTExOFoiLz4KICAgIDxwYXRoIHRyYW5zZm9ybT0idHJhbnNsYXRlKDQwOCAxNTgpIHNjYWxlKC40MikiIG9wYWNpdHk9Ii45IiBkPSJNMCwtMTE4IEMxNSwtMzIgMzIsLTE1IDExOCwwIEMzMiwxNSAxNSwzMiAwLDExOCBDLTE1LDMyIC0zMiwxNSAtMTE4LDAgQy0zMiwtMTUgLTE1LC0zMiAwLC0xMThaIi8+CiAgPC9nPgo8L3N2Zz4K" alt="">Coach IA <span class="ver">1.0</span></div>
-    <div class="toprow"><div class="today" id="today"></div><button class="me" id="meBtn" hidden title="Choisir le profil"></button></div>
-    <p class="tabsub" id="tabSub">Prépare ta séance du jour</p>
+    <div class="today" id="today"></div>
+    <div class="titlerow"><h1 class="ltitle" id="ltitle">Séance</h1><button class="me" id="meBtn" hidden title="Choisir le profil"></button></div>
+    <p class="tabsub" id="tabSub" hidden></p>
   </header>
 
 
   <!-- ===== Préparer ===== -->
-  <main id="viewPlan" class="sec" style="gap:22px">
+  <main id="viewPlan" class="sec" style="gap:26px">
+    <section class="hero" id="hero">
+      <div class="hero-top"><span class="hk" id="heroK">SÉANCE DU JOUR</span><span class="hbrand"><img class="logo xs" id="heroLogo" alt="">Coach IA</span></div>
+      <canvas id="heroAnim" aria-hidden="true"></canvas>
+      <div class="hero-b"><div class="hero-t"><h2 id="heroTitle">Ta séance</h2><p id="heroSub"></p></div><button class="hero-go" id="heroGo">Commencer</button></div>
+    </section>
     <section class="sec">
       <h2>Où t'entraînes-tu ?</h2>
       <div class="seg place" id="place"></div>
@@ -353,6 +439,7 @@ header.top{position:relative}
     <section class="sec">
       <h2>Ta séance préparée</h2>
       <div class="plan" id="plan"></div>
+      <button class="cta" id="go2" style="width:100%">Démarrer la séance</button>
       <p class="note">Touche un exercice pour voir le geste en grand avec ses explications. Les durées sont des estimations : tu avances à ton rythme avec le bouton « J'ai fini ». La voix te guide à chaque étape, pense à monter le son.</p>
     </section>
   </main>
@@ -896,6 +983,13 @@ function dTxt(b,withSets){
   const unit=b.t==="reps"?b.target+" rép."+(b.side?" / côté":""):b.target>=120?(b.target/60)+" min":b.target+" s";
   return withSets&&b.sets>1?b.sets+" × "+unit:unit;
 }
+function renderHero(){const P=PLAN,h=$("#hero");if(!h)return;unmountAll(h);
+  const b=P.blocks[0];const e=b?b.ex:null;const pre=PRESETS.find(p=>p[1].length===P.groups.length&&p[1].every(g=>P.groups.includes(g)));
+  $("#heroK").textContent=(ME?"POUR "+ME.pseudo.toUpperCase()+" · ":"")+"SÉANCE DU JOUR";
+  $("#heroTitle").textContent=(pre?pre[0]:P.groups.map(g=>GL[g]).join(", "));
+  $("#heroSub").textContent=`${fmtMin(P.est)} · ${P.blocks.length} exercices · ${LV[P.lvl].n} · ${P.place==="gym"?"En salle":"À la maison"}`;
+  $("#heroLogo").src=LOGO;
+  const c=$("#heroAnim");if(e){c.dataset.mv=EXMOV[e.id]||e.mv||"stand";c.dataset.gear=GEAR[e.id]||"";c.dataset.hl=(HLG[e.g]||[]).join(",");mountAll(h)}}
 function renderPlan(){
   const P=PLAN;
   const ph=(title,color,list,sets,sub)=>`<div class="phase"><h3><i style="background:var(${color})"></i>${title}<small>${sub}</small></h3>${list.map(b=>`<div class="item"><canvas class="thumb" data-ex="${b.ex.id}" data-gear="${GEAR[b.ex.id]||b.ex.gear||""}" data-hl="${(HLG[b.ex.g]||b.ex.hl||[]).join(",")}" data-mv="${EXMOV[b.ex.id]||b.ex.mv||"stand"}" aria-hidden="true"></canvas><span class="n">${esc(b.ex.name)}${b.ex.gym?' <span class="note">· salle</span>':b.ex.eq?' <span class="note">· haltères</span>':''}</span><span class="d">${dTxt(b,sets)}</span></div>`).join("")}</div>`;
@@ -905,10 +999,11 @@ function renderPlan(){
    +ph("Échauffement","--ph-warm",P.warm,false,fmtMin(wS))
    +ph("Corps de séance","--ph-work",P.blocks,true,fmtMin(P.est-wS-cS))
    +ph("Étirements","--ph-cool",P.cool,false,fmtMin(cS))+`<div style="height:8px"></div>`;
+  renderHero();
   mountAll($("#plan"));$("#plan").querySelectorAll(".item").forEach(it=>{const c=it.querySelector("canvas");if(c)it.onclick=()=>openSheet(exSheet(EXBY[c.dataset.ex]))});
   $("#shuffle").onclick=()=>{seed=Math.floor(Math.random()*1e9);update()};
 }
-function update(){ls.set(ME?"cd-set-"+ME.id:"cd-set",S);renderControls();if(S.groups.length){PLAN=build(S,seed);renderPlan()}else $("#plan").innerHTML=`<div class="empty"><b>Aucune zone choisie</b>Touche une zone au-dessus pour préparer ta séance.</div>`;$("#go").disabled=!S.groups.length}
+function update(){ls.set(ME?"cd-set-"+ME.id:"cd-set",S);renderControls();if(S.groups.length){PLAN=build(S,seed);renderPlan()}else $("#plan").innerHTML=`<div class="empty"><b>Aucune zone choisie</b>Touche une zone au-dessus pour préparer ta séance.</div>`;$("#go").disabled=!S.groups.length;["#go2","#heroGo"].forEach(s=>{const b=$(s);if(b)b.disabled=!S.groups.length})}
 $("#mins").oninput=e=>{S.mins=+e.target.value;update()};
 
 /* ---------- voix ---------- */
@@ -1290,8 +1385,8 @@ function useProfile(p){
   seed=Math.floor(Math.random()*1e9);update();renderMe();showTab("plan");
 }
 function renderMe(){const b=$("#meBtn");b.hidden=!ME;if(!ME)return;
-  b.innerHTML=`<i style="background:${ME.color}">${initial(ME.pseudo)}</i><span>${esc(ME.pseudo)}</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>`;
-  b.onclick=openProfiles}
+  b.innerHTML=`<i style="background:${ME.color}">${initial(ME.pseudo)}</i>`;b.setAttribute("aria-label","Profil : "+ME.pseudo);b.onclick=openProfiles;
+  const b2=$("#meBtn2");b2.innerHTML=b.innerHTML;b2.onclick=openProfiles;if(PLAN)renderHero()}
 function closeProfiles(){const a=$("#auth");a.hidden=true;a.innerHTML="";if($("#player").hidden&&$("#sheet").hidden)document.body.style.overflow=""}
 function openProfiles(){
   const a=$("#auth");a.hidden=false;document.body.style.overflow="hidden";
@@ -1305,6 +1400,7 @@ function openProfiles(){
     <p class="err" id="pmErr" hidden></p>
     ${PROFS.length>1?`<div id="pmDelBox"><button class="small-btn" id="pmDel" type="button">Supprimer le profil « ${esc(ME.pseudo)} »</button></div>`:""}
     <p class="note" style="margin:0;padding:0">Les profils, les séances et les machines sont enregistrés sur cet appareil.</p>
+    <div class="about"><img class="logo" src="${LOGO}" alt=""><span><b>Coach IA</b><br>Version 1.0</span></div>
   </div>`;
   const err=m=>{$("#pmErr").textContent=m;$("#pmErr").hidden=false};
   const check=(n,self)=>n.length<2?"Le pseudo doit faire au moins 2 caractères.":PROFS.some(p=>p.id!==self&&p.pseudo.toLowerCase()===n.toLowerCase())?"Ce pseudo existe déjà.":"";
@@ -1361,11 +1457,12 @@ async function renderProg(){
 function showTab(t){
   $("#tabPlan").setAttribute("aria-pressed",t==="plan");$("#tabProg").setAttribute("aria-pressed",t==="prog");$("#tabMach").setAttribute("aria-pressed",t==="mach");
   $("#viewPlan").hidden=t!=="plan";$("#viewProg").hidden=t!=="prog";$("#viewMach").hidden=t!=="mach";$("#startBar").hidden=t!=="plan";
-  $("#tabSub").textContent={plan:(ME?"Salut "+ME.pseudo+" ! ":"")+"Prépare ta séance du jour",mach:"Reconnais une machine en photo",prog:"Ta régularité et tes records"}[t];
+  const TT={plan:"Séance",mach:"Machines",prog:"Progrès"}[t];$("#ltitle").textContent=TT;$("#navTitle").textContent=TT;
   if(t==="prog")renderProg();if(t==="mach"){renderScans();renderCatalog()}window.scrollTo(0,0);
 }
+addEventListener("scroll",()=>{$("#navbar").classList.toggle("show",scrollY>58)},{passive:true});
 $("#tabPlan").onclick=()=>showTab("plan");$("#tabMach").onclick=()=>showTab("mach");$("#tabProg").onclick=()=>showTab("prog");
-$("#go").onclick=startSession;
+$("#go").onclick=startSession;$("#go2").onclick=startSession;$("#heroGo").onclick=startSession;
 {const d=new Date();$("#today").textContent=JOURS[d.getDay()].replace(".","")+" "+d.getDate()+" "+MOIS[d.getMonth()]}
 try{initMachine()}catch(e){}boot();
 </script>
