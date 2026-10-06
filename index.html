@@ -488,6 +488,11 @@ header.top{padding-top:10px}
 .sh-x.pri{background:var(--accent);color:#fff}
 .csheet .sh{scroll-margin-top:70px}
 @media (prefers-reduced-motion:reduce){.csheet-in{transition:none}}
+
+.busy{border:0;background:transparent;color:var(--on-ph);opacity:.9;font-weight:600;font-size:14.5px;text-decoration:underline;text-underline-offset:3px;padding:6px;justify-self:center}
+.busyc{gap:10px;text-align:left}.busyc>b{text-align:center;font-size:17px}
+.bopt{display:grid;gap:1px;text-align:left;border:0;border-radius:16px;padding:12px 14px;background:rgba(255,255,255,.95);color:#111}
+.bopt span{font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#0A60FF}.bopt b{font-size:17px}.bopt small{font-size:13px;color:#555}
 </style>
 </head>
 <body>
@@ -865,22 +870,39 @@ function drawMotion(a,time){
   // --- machine : derrière le corps
   const gear=(a.opts&&a.opts.gear)||"";const gtu=(()=>{const v=[P.neck[0]-P.hip[0],P.neck[1]-P.hip[1]],l=Math.hypot(...v)||1;return [v[0]/l,v[1]/l]})();
   const gfr=(()=>{const an=Math.atan2(gtu[0],gtu[1])*180/Math.PI,d=dir(an-90);return sup?[-d[0],-d[1]]:d})();
-  const ln=(p,q,wd,col)=>{const A=X(p),B=X(q);ctx.strokeStyle=col;ctx.lineWidth=wd*sc;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(A[0],A[1]);ctx.lineTo(B[0],B[1]);ctx.stroke()};
-  const bx=(x0,y0,x1,y1,r,col)=>{const A=X([Math.min(x0,x1),Math.min(y0,y1)]),B=X([Math.max(x0,x1),Math.max(y0,y1)]);ctx.fillStyle=col;rr(A[0],A[1],B[0]-A[0],B[1]-A[1],r*sc)};
+  const ln=(p,q,wd,col)=>{const A=X(p),B=X(q);ctx.lineCap="round";ctx.strokeStyle=col;ctx.lineWidth=wd*sc;ctx.beginPath();ctx.moveTo(A[0],A[1]);ctx.lineTo(B[0],B[1]);ctx.stroke();
+    if(wd>=2.4&&col.startsWith("#")){const dx=B[0]-A[0],dy=B[1]-A[1],l=Math.hypot(dx,dy)||1,o=wd*sc*.22,nx=-dy/l*o,ny=dx/l*o;
+      ctx.strokeStyle=shade(col,.45);ctx.lineWidth=wd*sc*.28;ctx.beginPath();ctx.moveTo(A[0]-nx,A[1]-ny);ctx.lineTo(B[0]-nx,B[1]-ny);ctx.stroke();
+      ctx.strokeStyle=shade(col,-.25);ctx.lineWidth=wd*sc*.2;ctx.beginPath();ctx.moveTo(A[0]+nx*1.4,A[1]+ny*1.4);ctx.lineTo(B[0]+nx*1.4,B[1]+ny*1.4);ctx.stroke()}};
+  const bx=(x0,y0,x1,y1,r,col)=>{const A=X([Math.min(x0,x1),Math.min(y0,y1)]),B=X([Math.max(x0,x1),Math.max(y0,y1)]);
+    if(col.startsWith("#")){const g=ctx.createLinearGradient(0,A[1],0,B[1]);g.addColorStop(0,shade(col,.32));g.addColorStop(.35,col);g.addColorStop(1,shade(col,-.3));ctx.fillStyle=g}else ctx.fillStyle=col;
+    rr(A[0],A[1],B[0]-A[0],B[1]-A[1],r*sc);
+    if(col===mpad&&col.startsWith("#")&&B[1]-A[1]>3*sc&&B[0]-A[0]>3*sc){ctx.fillStyle="rgba(255,255,255,.22)";rr(A[0]+1.2*sc,A[1]+.8*sc,B[0]-A[0]-2.4*sc,Math.min(1.6*sc,(B[1]-A[1])*.3),.8*sc)}};
   const ring=(p,r,wd,col)=>{const A=X(p);ctx.strokeStyle=col;ctx.lineWidth=wd*sc;ctx.beginPath();ctx.arc(A[0],A[1],r*sc,0,7);ctx.stroke()};
-  const plate=p=>{dot(p,11,mpad);ring(p,7,1.4,mach);dot(p,2.6,mach)};
+  const plate=p=>{const A=X(p),R1=11.5*sc;
+    const g=ctx.createRadialGradient(A[0]-R1*.35,A[1]-R1*.35,R1*.1,A[0],A[1],R1);g.addColorStop(0,"#4A4F5C");g.addColorStop(1,"#15171C");ctx.fillStyle=g;ctx.beginPath();ctx.arc(A[0],A[1],R1,0,7);ctx.fill();
+    ctx.strokeStyle="rgba(255,255,255,.18)";ctx.lineWidth=1.2*sc;ctx.beginPath();ctx.arc(A[0],A[1],R1*.78,0,7);ctx.stroke();ctx.beginPath();ctx.arc(A[0],A[1],R1*.42,0,7);ctx.stroke();
+    ctx.fillStyle="#C9CED8";ctx.beginPath();ctx.arc(A[0],A[1],2.4*sc,0,7);ctx.fill();ctx.fillStyle="#7D8494";ctx.beginPath();ctx.arc(A[0],A[1],1*sc,0,7);ctx.fill()};
   const mid=(u,v)=>[(u[0]+v[0])/2,(u[1]+v[1])/2];const hm=mid(P.hand,P.handB);
   const along=(k,o)=>[P.hip[0]+gtu[0]*50*k+gfr[0]*o,P.hip[1]+gtu[1]*50*k+gfr[1]*o];
   const seat=(back)=>{const h=P.hip;bx(h[0]-13,h[1]+7,h[0]+13,h[1]+12,3,mpad);ln([h[0],h[1]+12],[h[0],0],3,mach);ln([h[0]-12,0],[h[0]+12,0],3.4,mach);
     if(back){cap(along(.08,-12),along(.9,-12),4.2,4.2,mpad);ln(along(.08,-12),[h[0],h[1]+10],2.6,mach)}};
-  const tower=(side,py)=>{const x=side>0?bb[1]-7:bb[0]+7;ln([x,0],[x,-140],5,mach);ln([x-10,0],[x+10,0],4,mach);bx(x-6,-8,x+6,-42,2,mpad);
-    for(let i=1;i<5;i++)ln([x-6,-8-i*6.8],[x+6,-8-i*6.8],.6,mach);const p=[x-side*6,py];ln([x,py],p,3,mach);dot(p,3.4,mcab);return p};
+  const tower=(side,py)=>{const x=side>0?bb[1]-7:bb[0]+7;
+    ln([x-8,0],[x-8,-140],3,mach);ln([x+8,0],[x+8,-140],3,mach);ln([x-10,-140],[x+10,-140],4,mach);ln([x-12,0],[x+12,0],4.4,mach);
+    ln([x-3,-6],[x-3,-118],1,mach);ln([x+3,-6],[x+3,-118],1,mach);
+    for(let i=0;i<9;i++){const y0=-6-i*5.2;bx(x-6.5,y0-4.4,x+6.5,y0,1,i===4?"#2C2F38":mpad)}
+    ctx.fillStyle="#E8B400";const pin=X([x+7,-6-4*5.2-2.2]);ctx.beginPath();ctx.arc(pin[0],pin[1],1.4*sc,0,7);ctx.fill();
+    const p=[x-side*7,py];ln([x,py],p,3,mach);const P0=X(p);ctx.fillStyle=mcab;ctx.beginPath();ctx.arc(P0[0],P0[1],4.2*sc,0,7);ctx.fill();
+    ctx.strokeStyle="rgba(255,255,255,.55)";ctx.lineWidth=.8*sc;for(let a=0;a<3;a++){const an=a*Math.PI/3;ctx.beginPath();ctx.moveTo(P0[0]-Math.cos(an)*3.4*sc,P0[1]-Math.sin(an)*3.4*sc);ctx.lineTo(P0[0]+Math.cos(an)*3.4*sc,P0[1]+Math.sin(an)*3.4*sc);ctx.stroke()}
+    ln([x,-118],[x,py],1,mcab);return p};
   const bench=()=>{const ys=Math.max(P.neck[1],P.hip[1])+8.5,x0=Math.min(P.neck[0],P.hip[0])-12,x1=Math.max(P.neck[0],P.hip[0])+10;
     bx(x0,ys,x1,ys+5.5,2.5,mpad);ln([x0+5,ys+5],[x0+5,0],3,mach);ln([x1-5,ys+5],[x1-5,0],3,mach)};
   const shinPad=(s)=>{const v=[P.foot[0]-P.knee[0],P.foot[1]-P.knee[1]],l=Math.hypot(...v)||1,n=[v[1]/l*s,-v[0]/l*s];const p=[P.foot[0]-v[0]/l*4+n[0]*6,P.foot[1]-v[1]/l*4+n[1]*6];
     ln(P.knee,p,2.4,mach);dot(P.knee,2.6,mach);cap([p[0]-n[1]*5,p[1]+n[0]*5],[p[0]+n[1]*5,p[1]-n[0]*5],3.8,3.8,mpad)};
   let front=null;
-  if(gear){switch(gear){
+  if(gear){ // tapis de sol sous la machine
+    if(!m.nog){const g0=X([bb[0]+4,0]),g1=X([bb[1]-4,0]);ctx.fillStyle="rgba(40,44,56,.10)";rr(g0[0],g0[1]-.5*sc,g1[0]-g0[0],2.6*sc,1.2*sc)}
+    switch(gear){
     case "bench_bar":bench();{const x=P.neck[0]+3;ln([x,0],[x,-58],3,mach);ln([x,-50],[x-5,-50],3,mach)}front=()=>plate(hm);break;
     case "seat_handles":seat(1);front=()=>{const pv=[P.neck[0]-6,P.neck[1]-30];ln(pv,P.hand,2.6,mach);dot(pv,2.8,mach);ln([P.hand[0],P.hand[1]-6],[P.hand[0],P.hand[1]+6],3.4,mpad)};break;
     case "pecdeck":front=()=>{[P.hand,P.handB].forEach(h=>bx(h[0]-3.5,h[1]-8,h[0]+3.5,h[1]+8,2.5,mpad))};break;
@@ -889,7 +911,7 @@ function drawMotion(a,time){
       front=()=>{ln(top,hm,1.4,mcab);ln([hm[0]-9,hm[1]],[hm[0]+9,hm[1]],2.6,mpad)}}break;
     case "seatrow":{seat(0);bx(P.toe[0]+1,P.toe[1]-15,P.toe[0]+5.5,P.toe[1]+2,2,mpad);ln([P.toe[0]+3,P.toe[1]+2],[P.toe[0]+3,0],2.6,mach);const pt=tower(1,-30);front=()=>{ln(pt,hm,1.4,mcab);dot(hm,2.4,mpad)}}break;
     case "barbell":front=()=>plate([hm[0],hm[1]]);break;
-    case "barbell_back":front=()=>plate([P.neck[0]-gfr[0]*3,P.neck[1]-gfr[1]*3+2]);break;
+    case "barbell_back":front=()=>plate(along(.84,-6));break;
     case "seat_front":{const h=P.hip;bx(h[0]-17,h[1]+7,h[0]+17,h[1]+12,3,mpad);ln([h[0],h[1]+12],[h[0],0],3,mach);ln([h[0]-14,0],[h[0]+14,0],3.4,mach);
       front=()=>{[P.hand,P.handB].forEach(hh=>ln([hh[0]-5,hh[1]],[hh[0]+5,hh[1]],3.4,mpad))}}break;
     case "cable_side":{const pt=tower(-1,-10);front=()=>ln(pt,P.hand,1.4,mcab)}break;
@@ -920,7 +942,7 @@ function drawMotion(a,time){
       front=()=>{ln(P.foot,P.footB,2,mcab);ring(c,8,2,mach);dot(c,2.6,mach)}}break;
     case "stair":{const fx=Math.max(P.toe[0],P.toeB[0]);for(let i=0;i<3;i++)bx(fx-20+i*12,-(i+1)*9,fx-8+i*12,-i*9,1.4,mpad);
       ln([fx+20,0],[fx+20,-92],4,mach);ln([P.hip[0]-6,-86],[fx+20,-86],3,mach);bx(fx+12,-104,fx+28,-92,2.2,mpad);ln([P.hip[0]-20,0],[fx+30,0],3.6,mach)}break;
-    case "smith":{const x=P.neck[0];ln([x-7,0],[x-7,-162],3.2,mach);ln([x+7,0],[x+7,-162],3.2,mach);ln([x-16,-162],[x+16,-162],3.6,mach);front=()=>plate([P.neck[0]-gfr[0]*3,P.neck[1]-gfr[1]*3+2])}break;
+    case "smith":{const x=P.neck[0];ln([x-7,0],[x-7,-162],3.2,mach);ln([x+7,0],[x+7,-162],3.2,mach);ln([x-16,-162],[x+16,-162],3.6,mach);front=()=>plate(along(.84,-6))}break;
     case "hack":{ln(along(-.7,-18),along(1.4,-18),3.2,mach);cap(along(.02,-12),along(.98,-12),4.4,4.4,mpad);bx(P.toe[0]-18,-4,P.toe[0]+6,0,2,mpad);
       front=()=>cap([P.neck[0]-3,P.neck[1]-4],[P.neck[0]+5,P.neck[1]-4],3.4,3.4,mpad)}break;
     case "adductor":case "abductor":{const h=P.hip;bx(h[0]-18,h[1]+7,h[0]+18,h[1]+12,3,mpad);ln([h[0],h[1]+12],[h[0],0],3,mach);ln([h[0]-16,0],[h[0]+16,0],3.4,mach);
@@ -1267,7 +1289,7 @@ function render(){
       <canvas class="pmotion" data-ex="${b.ex.id}" data-gear="${GEAR[b.ex.id]||""}" data-hl="${(HLG[b.ex.g]||[]).join(",")}" data-mv="${EXMOV[b.ex.id]||b.ex.mv||"stand"}" aria-hidden="true"></canvas>
       <div class="pring"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="trk" cx="50" cy="50" r="45"/><circle class="arc" id="arc" cx="50" cy="50" r="45" pathLength="100" stroke-dasharray="100" stroke-dashoffset="0"/></svg><div class="in"><div class="pbig" id="big">${b.target}</div><div class="punit">${b.t==="reps"?"répétitions"+(b.side?" par côté":""):"secondes"}</div></div></div>
       <div class="ztip">Touche l'animation pour l'agrandir</div><div class="pcue">${esc(b.ex.cue)}</div><div class="pnext" id="sub"></div>`;
-    act=`<button class="done" id="doneBtn">J'ai fini</button><div class="psub"><button id="skipBtn">Passer</button><button id="pauseBtn">Pause</button></div>`;
+    act=`<button class="done" id="doneBtn">J'ai fini</button><div class="psub"><button id="skipBtn">Passer</button><button id="pauseBtn">Pause</button></div>${s.ph==="main"&&(GEAR[b.ex.id]||b.ex.gym||b.ex.gear)?`<button class="busy" id="busyBtn">Machine occupée ?</button>`:""}`;
   }
   const doneCount=R.st.slice(0,R.i).length;
   el.innerHTML=`<div class="ptop"><button class="pbtn" id="quitBtn">Quitter</button><button class="pbtn" id="vBtn" aria-pressed="${vOn}">${vOn?"Voix : oui":"Voix : non"}</button><div class="clock" id="clock">${fmt(elapsed())}</div></div>
@@ -1282,6 +1304,7 @@ function bindPlayer(){
   const on=(id,f)=>{const e=document.getElementById(id);if(e)e.onclick=f};
   on("doneBtn",doneStep);
   on("skipBtn",()=>{R.prevGood=null;go(R.i+1)});
+  on("busyBtn",busyMenu);
   on("plus",()=>{R.bonus=(R.bonus||0)+15;R.tenSaid=false;updateLive()});
   on("pauseBtn",togglePause);
   on("vBtn",()=>{vOn=!vOn;ls.set("cd-voice",vOn);if(!vOn){const f=vDone;stopVoice();if(f)f()}render()});
@@ -1634,6 +1657,45 @@ function renderRail(){const rail=$("#rail");if(rail&&!rail.dataset.done){rail.da
       window.scrollTo({top:0,behavior:"smooth"});const h=$("#hero");h.classList.remove("pulse");void h.offsetWidth;h.classList.add("pulse")})}
 }
 
+
+/* ---------- machine occupée ---------- */
+function altFor(ex){
+  const inUse=new Set(R.st.filter(x=>x.kind==="work").map(x=>x.b.ex.id)),gear=GEAR[ex.id]||ex.gear||"";
+  const ok=e=>e.id!==ex.id&&e.g===ex.g&&!["warm","cool"].includes(e.g)&&okLvl(e,R.P.lvl)&&(R.P.place==="gym"||!e.gym)&&(GEAR[e.id]||"")!==gear||false;
+  const pool=EX.filter(e=>ok(e)&&(GEAR[e.id]||"")!==gear);
+  const FAM=[["squat","bbsquat","hacksquat","legpress","goblet","halfsquat","lunge","bulgarian","wallsit"],["rdl","backext","bridge","bridge1","hipthrust","kickback","donkey"],
+    ["pushup","kneepush","incline","decline","press","benchpress","seatpress","fly","pecdeck","cablefly"],["pulldown","assistpull","pullover"],["row","seatrow","superman","swimmer","ytw"],
+    ["military","seatmilitary","pike"],["lateral","cablelat","smallcircle"],["curl","machcurl"],["pushdown","overhead","dips","updown"],["legext","legcurl"],["calf"],["adductm","abductm","abduct"],
+    ["crunch","kneelcrunch","abmachine","bike","legraise","captain","twist","plank","sideplank"],["run","cycle","rower","elliptical","recumbent","spin","stair","jacks","highknee","climber","rope","burpee","skater","jumpsquat"]];
+  const mvOf=e=>EXMOV[e.id]||e.mv,fam=f=>FAM.findIndex(x=>x.includes(f)),myF=fam(mvOf(ex));
+  const score=e=>(inUse.has(e.id)?-10:0)+(myF>=0&&fam(mvOf(e))===myF?6:0)+(e.gym&&GEAR[e.id]?2:0)+(e.eq?1:0)+(e.t===ex.t?1:0);
+  return pool.sort((a,b)=>score(b)-score(a))[0]||null;
+}
+function laterPossible(){const s=R.st[R.i];return R.st.some((x,j)=>j>R.i&&x.kind==="work"&&x.ph==="main"&&x.b!==s.b)}
+function busyMenu(){
+  const s=R.st[R.i],alt=altFor(s.b.ex),later=laterPossible();stopVoice();
+  $("#pact").innerHTML=`<div class="confirm busyc"><b>${esc(s.b.ex.name)} est occupée ?</b>
+    ${alt?`<button class="bopt" id="bAlt"><span>Remplacer par</span><b>${esc(alt.name)}</b><small>${esc(GEAR[alt.id]?GEARNAME[GEAR[alt.id]]:alt.eq?"Haltères":"Poids du corps")} · mêmes muscles</small></button>`:""}
+    ${later?`<button class="bopt" id="bLater"><span>La faire plus tard</span><b>Passer à l'exercice suivant</b><small>Elle revient à la fin de la séance</small></button>`:""}
+    ${!alt&&!later?`<span>Aucune solution de rechange ici. Fais une courte pause et réessaie.</span>`:""}
+    <div class="psub"><button id="bCancel">Annuler</button></div></div>`;
+  const on=(id,f)=>{const e=document.getElementById(id);if(e)e.onclick=f};
+  on("bCancel",()=>render());
+  on("bAlt",()=>{const L=LV[R.P.lvl],adj=R.P.adj||1;
+    const nb={ex:alt,t:alt.t,target:alt.t==="reps"?near(alt.v*L.rm*adj,REPS):near(alt.v*L.tm*adj,SECS),side:!!alt.side,sets:s.b.sets,rest:s.b.rest};nb.per=workSec(nb)+nb.rest;
+    const old=s.b;for(let j=R.i;j<R.st.length;j++)if(R.st[j].b===old)R.st[j].b=nb;
+    const bi=R.P.blocks.indexOf(old);if(bi>=0)R.P.blocks[bi]=nb;
+    R.st[R.i].first=true;toast("Remplacé par "+alt.name);go(R.i)});
+  on("bLater",()=>{const old=s.b;let end=R.i;while(end+1<R.st.length&&R.st[end+1].b===old&&R.st[end+1].ph==="main")end++;
+    const part=R.st.splice(R.i,end-R.i+1);if(part[part.length-1].kind!=="rest")part.push({ph:"main",kind:"rest",secs:old.rest,b:old,est:old.rest});
+    part.forEach(x=>{if(x.kind==="work")x.first=false});const fw=part.find(x=>x.kind==="work");if(fw)fw.first=true;
+    let ins=R.st.findIndex((x,j)=>j>=R.i&&x.ph==="cool");if(ins<0)ins=R.st.length;
+    if(ins>0&&R.st[ins-1].kind==="work"&&R.st[ins-1].ph==="main")R.st.splice(ins++,0,{ph:"main",kind:"rest",secs:old.rest,b:R.st[ins-1].b,est:old.rest});
+    R.st.splice(ins,0,...part);
+    if(R.st[R.i]&&R.st[R.i].kind==="rest")R.st.splice(R.i,1);
+    const nw=R.st[R.i];if(nw&&nw.kind==="work"&&nw.ph==="main")nw.first=true;
+    toast(old.ex.name+" passe à la fin de la séance");go(R.i)});
+}
 /* ---------- accueil : semaine, pastilles, programme, conseil ---------- */
 const TIPS=["Bois un grand verre d'eau avant ta séance : même une petite déshydratation fait baisser la force.",
  "Le sommeil fait progresser autant que l'entraînement : vise 7 à 9 heures par nuit.",
