@@ -283,12 +283,25 @@ input[type=range]::-moz-range-thumb{width:30px;height:30px;border-radius:50%;bac
 .keep{display:flex;gap:10px;align-items:center;font-size:14.5px;font-weight:500}.keep input{width:20px;height:20px;accent-color:var(--accent)}
 .aform .cta{width:100%}.alinks{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
 header.top{position:relative}
-.me{position:absolute;top:2px;right:0;display:flex;align-items:center;gap:8px;border:0;border-radius:999px;padding:4px 12px 4px 4px;font-weight:700;font-size:14px;max-width:46%;
+.toprow{display:flex;justify-content:space-between;align-items:center;gap:10px;order:-1;min-height:40px}
+.me{position:static;display:flex;align-items:center;gap:8px;border:0;border-radius:999px;padding:4px 12px 4px 4px;font-weight:700;font-size:14px;max-width:46%;
   background:var(--glass);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:inset 0 1px 0 var(--edge),var(--shade)}
 .me i{width:32px;height:32px;flex:none;border-radius:50%;display:grid;place-items:center;font-style:normal;font-weight:900;color:#fff}
 .me span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .brand .logo{width:42px;height:42px;border-radius:12px;vertical-align:-7px;margin-right:10px;box-shadow:0 6px 16px rgba(58,91,255,.35)}
 .logo.big{width:84px;height:84px;border-radius:22px;justify-self:center;box-shadow:0 12px 30px rgba(58,91,255,.4)}
+.pm{align-content:start}.pm .sh-top h2{font-size:24px}
+.plist{display:grid;gap:8px}
+.psel{display:flex;align-items:center;gap:12px;width:100%;border:1.5px solid var(--edge-lo);background:var(--glass-hi);border-radius:18px;padding:10px 12px;font-weight:700;font-size:16px;text-align:left;box-shadow:inset 0 1px 0 var(--edge)}
+.psel i{width:40px;height:40px;flex:none;border-radius:50%;display:grid;place-items:center;font-style:normal;font-weight:900;color:#fff;font-size:18px}
+.psel span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.psel.on{border-color:var(--accent);background:var(--accent-soft)}
+.pcur{font-size:12px;color:var(--accent);background:var(--glass-hi);padding:3px 9px;border-radius:999px}
+.prow2{display:flex;gap:8px;align-items:center}.prow2 input{flex:1;min-width:0}
+.small-btn.pri{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.small-btn.danger{background:color-mix(in srgb,var(--bad) 14%,transparent);color:var(--bad)}
+.confirm2{display:grid;gap:8px;padding:12px;border-radius:16px;background:color-mix(in srgb,var(--bad) 8%,transparent)}
+.me svg{opacity:.55;flex:none}
 @media (prefers-reduced-motion:reduce){*,body::before{transition:none!important;animation:none!important}}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){:root{--glass:rgba(255,255,255,.9)}.player .pglass,.psub button{background:rgba(255,255,255,.22)}}
 </style>
@@ -299,8 +312,7 @@ header.top{position:relative}
 <div class="wrap" id="app">
   <header class="top">
     <div class="brand"><img class="logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDI0IDEwMjQiIHdpZHRoPSIxMDI0IiBoZWlnaHQ9IjEwMjQiPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJiZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiMyRjhDRkYiLz48c3RvcCBvZmZzZXQ9Ii41NSIgc3RvcC1jb2xvcj0iIzNBNUJGRiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzdBNEJGRiIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0iZ2xvdyIgY3g9Ii4yOCIgY3k9Ii4xOCIgcj0iLjg1Ij4KICAgICAgPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjZmZmIiBzdG9wLW9wYWNpdHk9Ii40MiIvPjxzdG9wIG9mZnNldD0iLjU1IiBzdG9wLWNvbG9yPSIjZmZmIiBzdG9wLW9wYWNpdHk9IjAiLz4KICAgIDwvcmFkaWFsR3JhZGllbnQ+CiAgICA8cmFkaWFsR3JhZGllbnQgaWQ9ImRlZXAiIGN4PSIuODUiIGN5PSIuOTUiIHI9Ii43Ij4KICAgICAgPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjMUIwRjZCIiBzdG9wLW9wYWNpdHk9Ii40NSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzFCMEY2QiIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJ3IiB4MT0iMCIgeTE9IjAiIHgyPSIwIiB5Mj0iMSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI0ZGRkZGRiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI0RERTVGRiIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxmaWx0ZXIgaWQ9InNoIiB4PSItMzAlIiB5PSItMzAlIiB3aWR0aD0iMTYwJSIgaGVpZ2h0PSIxNjAlIj4KICAgICAgPGZlRHJvcFNoYWRvdyBkeD0iMCIgZHk9IjIyIiBzdGREZXZpYXRpb249IjI2IiBmbG9vZC1jb2xvcj0iIzE2MEM1QyIgZmxvb2Qtb3BhY2l0eT0iLjM4Ii8+CiAgICA8L2ZpbHRlcj4KICA8L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjEwMjQiIGhlaWdodD0iMTAyNCIgZmlsbD0idXJsKCNiZykiLz4KICA8cmVjdCB3aWR0aD0iMTAyNCIgaGVpZ2h0PSIxMDI0IiBmaWxsPSJ1cmwoI2RlZXApIi8+CiAgPHJlY3Qgd2lkdGg9IjEwMjQiIGhlaWdodD0iMTAyNCIgZmlsbD0idXJsKCNnbG93KSIvPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDUwMCA1NDgpIHJvdGF0ZSgtMzUpIiBmaWxsPSJ1cmwoI3cpIiBmaWx0ZXI9InVybCgjc2gpIj4KICAgIDxyZWN0IHg9Ii0yMTUiIHk9Ii0yNyIgd2lkdGg9IjQzMCIgaGVpZ2h0PSI1NCIgcng9IjI3Ii8+CiAgICA8cmVjdCB4PSItMzAwIiB5PSItMTQwIiB3aWR0aD0iNzYiIGhlaWdodD0iMjgwIiByeD0iMzIiLz4KICAgIDxyZWN0IHg9Ii0zNzIiIHk9Ii0xMDAiIHdpZHRoPSI2MiIgaGVpZ2h0PSIyMDAiIHJ4PSIyNiIvPgogICAgPHJlY3QgeD0iMjI0IiB5PSItMTQwIiB3aWR0aD0iNzYiIGhlaWdodD0iMjgwIiByeD0iMzIiLz4KICAgIDxyZWN0IHg9IjMxMCIgeT0iLTEwMCIgd2lkdGg9IjYyIiBoZWlnaHQ9IjIwMCIgcng9IjI2Ii8+CiAgPC9nPgogIDxnIGZpbGw9IiNGRkZGRkYiIGZpbHRlcj0idXJsKCNzaCkiPgogICAgPHBhdGggdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMjgyIDI3MikiIGQ9Ik0wLC0xMTggQzE1LC0zMiAzMiwtMTUgMTE4LDAgQzMyLDE1IDE1LDMyIDAsMTE4IEMtMTUsMzIgLTMyLDE1IC0xMTgsMCBDLTMyLC0xNSAtMTUsLTMyIDAsLTExOFoiLz4KICAgIDxwYXRoIHRyYW5zZm9ybT0idHJhbnNsYXRlKDQwOCAxNTgpIHNjYWxlKC40MikiIG9wYWNpdHk9Ii45IiBkPSJNMCwtMTE4IEMxNSwtMzIgMzIsLTE1IDExOCwwIEMzMiwxNSAxNSwzMiAwLDExOCBDLTE1LDMyIC0zMiwxNSAtMTE4LDAgQy0zMiwtMTUgLTE1LC0zMiAwLC0xMThaIi8+CiAgPC9nPgo8L3N2Zz4K" alt="">Coach IA <span class="ver">1.0</span></div>
-    <div class="today" id="today"></div>
-    <button class="me" id="meBtn" hidden title="Changer de profil"></button>
+    <div class="toprow"><div class="today" id="today"></div><button class="me" id="meBtn" hidden title="Choisir le profil"></button></div>
     <p class="tabsub" id="tabSub">Prépare ta séance du jour</p>
   </header>
 
@@ -1075,34 +1087,16 @@ async function saveSession(feel){
 
 /* ---------- stockage : base privée sur ton compte, sinon le téléphone ---------- */
 const withTO=(p,ms,fb)=>Promise.race([Promise.resolve(p).catch(()=>fb),new Promise(r=>setTimeout(()=>r(fb),ms))]);
-const Store={db:null,uid:null,ready:null,cache:null,
-  init(){if(this.ready)return this.ready;this.ready=(async()=>{try{if(window.claude&&claude.use){const [db,user]=await withTO(Promise.all([claude.use("db"),claude.use("user")]),6000,[null,null]);
-    if(db&&user){const id=await withTO(user.id(),4000,null);if(id){this.db=db;this.uid=id}}}}catch(e){}})();return this.ready},
-  col(){return this.db.collection("data/users/"+this.uid)},
-  async list(){await this.init();const local=ls.get("cd-hist",[]);
-    if(this.db){try{const q=await withTO(this.col().orderBy("date","desc").limit(300).get(),6000,null);if(!q)throw 0;const rows=q.docs.map(d=>d.data());
-      // rattrape les séances gardées seulement sur ce téléphone
-      const have=new Set(rows.map(r=>r.date));const missing=local.filter(r=>!have.has(r.date));
-      for(const m of missing){try{await this.col().doc("s"+Date.parse(m.date)).set(m);rows.push(m)}catch(e){}}
-      if(missing.length)ls.set("cd-hist",[]);
-      return rows.filter(mine).sort((a,b)=>b.date.localeCompare(a.date))}catch(e){}}
-    return local.filter(mine).sort((a,b)=>b.date.localeCompare(a.date))},
-  async add(rec){await this.init();const clean=JSON.parse(JSON.stringify(rec));
-    if(this.db){try{const ok=await withTO(this.col().doc("s"+Date.parse(rec.date)).set(clean).then(()=>1),6000,0);if(ok)return}catch(e){}}
-    const h=ls.get("cd-hist",[]);h.push(clean);ls.set("cd-hist",h)},
-  scol(){return this.db.collection("data/users/"+this.uid+"/scans/list")},
-  async listScans(){await this.init();if(this.db){try{const q=await withTO(this.scol().orderBy("date","desc").limit(30).get(),6000,null);if(!q)throw 0;return q.docs.map(x=>x.data()).filter(mine)}catch(e){}}
-    return ls.get("cd-scans",[]).filter(mine).sort((a,b)=>b.date.localeCompare(a.date))},
-  pcol(){return this.db.collection("data/users/"+this.uid+"/profiles/list")},
-  async listProfiles(){await this.init();const loc=ls.get("cd-profiles",[]);const by={};loc.forEach(p=>by[p.id]=p);
-    if(this.db){try{const q=await withTO(this.pcol().get(),5000,null);if(q){q.docs.forEach(x=>{const p=x.data();if(p&&p.id)by[p.id]=p});ls.set("cd-profiles",Object.values(by))}}catch(e){}}
-    return Object.values(by).sort((a,b)=>a.created.localeCompare(b.created))},
-  async saveProfile(p){await this.init();const c=JSON.parse(JSON.stringify(p));
-    const L=ls.get("cd-profiles",[]).filter(x=>x.id!==p.id);L.push(c);ls.set("cd-profiles",L);
-    if(this.db){try{await withTO(this.pcol().doc(p.id).set(c),5000,null)}catch(e){}}},
-  async addScan(r){await this.init();const c=JSON.parse(JSON.stringify(r));
-    if(this.db){try{const ok=await withTO(this.scol().doc("m"+Date.parse(r.date)).set(c).then(()=>1),6000,0);if(ok)return}catch(e){}}
-    const h=ls.get("cd-scans",[]);h.unshift(c);ls.set("cd-scans",h.slice(0,12))}
+const Store={db:null,uid:null,ready:null,
+  // tout est enregistré sur cet appareil ; l'ancien historique du compte Claude reste visible en lecture
+  init(){if(this.ready)return this.ready;this.ready=(async()=>{try{if(window.claude&&claude.use){const [db,user]=await withTO(Promise.all([claude.use("db"),claude.use("user")]),5000,[null,null]);
+    if(db&&user){const id=await withTO(user.id(),3000,null);if(id){this.db=db;this.uid=id}}}}catch(e){}})();return this.ready},
+  async old(path){await this.init();if(!this.db)return [];try{const q=await withTO(this.db.collection(path).orderBy("date","desc").limit(300).get(),5000,null);return q?q.docs.map(d=>d.data()):[]}catch(e){return []}},
+  merge(a,b){const by={};[...a,...b].forEach(r=>{if(r&&r.date)by[r.date]=r});return Object.values(by).filter(mine).sort((x,y)=>y.date.localeCompare(x.date))},
+  async list(){const old=this.uid||window.claude?await this.old("data/users/"+(await this.init(),this.uid)):[];return this.merge(old.filter(r=>r.realSec!==undefined),ls.get("cd-hist",[]))},
+  async add(rec){const h=ls.get("cd-hist",[]);h.push(JSON.parse(JSON.stringify(rec)));ls.set("cd-hist",h)},
+  async listScans(){await this.init();const old=this.uid?await this.old("data/users/"+this.uid+"/scans/list"):[];return this.merge(old,ls.get("cd-scans",[]))},
+  async addScan(r){const h=ls.get("cd-scans",[]);h.unshift(JSON.parse(JSON.stringify(r)));ls.set("cd-scans",h.slice(0,20))}
 };
 
 /* ---------- photo d'une machine ---------- */
@@ -1278,116 +1272,55 @@ function openSheet(o){
 function mountAll(root){root.querySelectorAll("canvas[data-mv]").forEach(c=>mountMotion(c,c.dataset.mv,{hl:(c.dataset.hl||"").split(",").filter(Boolean),gear:c.dataset.gear||""}))}
 
 
-/* ---------- profils : pseudo + mot de passe ---------- */
+/* ---------- profils (sur cet appareil) ---------- */
 const LOGO="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDI0IDEwMjQiIHdpZHRoPSIxMDI0IiBoZWlnaHQ9IjEwMjQiPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJiZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiMyRjhDRkYiLz48c3RvcCBvZmZzZXQ9Ii41NSIgc3RvcC1jb2xvcj0iIzNBNUJGRiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzdBNEJGRiIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0iZ2xvdyIgY3g9Ii4yOCIgY3k9Ii4xOCIgcj0iLjg1Ij4KICAgICAgPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjZmZmIiBzdG9wLW9wYWNpdHk9Ii40MiIvPjxzdG9wIG9mZnNldD0iLjU1IiBzdG9wLWNvbG9yPSIjZmZmIiBzdG9wLW9wYWNpdHk9IjAiLz4KICAgIDwvcmFkaWFsR3JhZGllbnQ+CiAgICA8cmFkaWFsR3JhZGllbnQgaWQ9ImRlZXAiIGN4PSIuODUiIGN5PSIuOTUiIHI9Ii43Ij4KICAgICAgPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjMUIwRjZCIiBzdG9wLW9wYWNpdHk9Ii40NSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzFCMEY2QiIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJ3IiB4MT0iMCIgeTE9IjAiIHgyPSIwIiB5Mj0iMSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI0ZGRkZGRiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI0RERTVGRiIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxmaWx0ZXIgaWQ9InNoIiB4PSItMzAlIiB5PSItMzAlIiB3aWR0aD0iMTYwJSIgaGVpZ2h0PSIxNjAlIj4KICAgICAgPGZlRHJvcFNoYWRvdyBkeD0iMCIgZHk9IjIyIiBzdGREZXZpYXRpb249IjI2IiBmbG9vZC1jb2xvcj0iIzE2MEM1QyIgZmxvb2Qtb3BhY2l0eT0iLjM4Ii8+CiAgICA8L2ZpbHRlcj4KICA8L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjEwMjQiIGhlaWdodD0iMTAyNCIgZmlsbD0idXJsKCNiZykiLz4KICA8cmVjdCB3aWR0aD0iMTAyNCIgaGVpZ2h0PSIxMDI0IiBmaWxsPSJ1cmwoI2RlZXApIi8+CiAgPHJlY3Qgd2lkdGg9IjEwMjQiIGhlaWdodD0iMTAyNCIgZmlsbD0idXJsKCNnbG93KSIvPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDUwMCA1NDgpIHJvdGF0ZSgtMzUpIiBmaWxsPSJ1cmwoI3cpIiBmaWx0ZXI9InVybCgjc2gpIj4KICAgIDxyZWN0IHg9Ii0yMTUiIHk9Ii0yNyIgd2lkdGg9IjQzMCIgaGVpZ2h0PSI1NCIgcng9IjI3Ii8+CiAgICA8cmVjdCB4PSItMzAwIiB5PSItMTQwIiB3aWR0aD0iNzYiIGhlaWdodD0iMjgwIiByeD0iMzIiLz4KICAgIDxyZWN0IHg9Ii0zNzIiIHk9Ii0xMDAiIHdpZHRoPSI2MiIgaGVpZ2h0PSIyMDAiIHJ4PSIyNiIvPgogICAgPHJlY3QgeD0iMjI0IiB5PSItMTQwIiB3aWR0aD0iNzYiIGhlaWdodD0iMjgwIiByeD0iMzIiLz4KICAgIDxyZWN0IHg9IjMxMCIgeT0iLTEwMCIgd2lkdGg9IjYyIiBoZWlnaHQ9IjIwMCIgcng9IjI2Ii8+CiAgPC9nPgogIDxnIGZpbGw9IiNGRkZGRkYiIGZpbHRlcj0idXJsKCNzaCkiPgogICAgPHBhdGggdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMjgyIDI3MikiIGQ9Ik0wLC0xMTggQzE1LC0zMiAzMiwtMTUgMTE4LDAgQzMyLDE1IDE1LDMyIDAsMTE4IEMtMTUsMzIgLTMyLDE1IC0xMTgsMCBDLTMyLC0xNSAtMTUsLTMyIDAsLTExOFoiLz4KICAgIDxwYXRoIHRyYW5zZm9ybT0idHJhbnNsYXRlKDQwOCAxNTgpIHNjYWxlKC40MikiIG9wYWNpdHk9Ii45IiBkPSJNMCwtMTE4IEMxNSwtMzIgMzIsLTE1IDExOCwwIEMzMiwxNSAxNSwzMiAwLDExOCBDLTE1LDMyIC0zMiwxNSAtMTE4LDAgQy0zMiwtMTUgLTE1LC0zMiAwLC0xMThaIi8+CiAgPC9nPgo8L3N2Zz4K";
 const AVC=["#2F6BFF","#F26B12","#0EA58E","#6A4DF0","#D92D7A","#2B9BE0"];
-let ME=null;
-const b64=buf=>btoa(String.fromCharCode(...new Uint8Array(buf)));
-const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
-const canHash=()=>!!(window.crypto&&crypto.subtle&&crypto.getRandomValues);
-async function hashPw(pw,salt){const k=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveBits"]);
-  return b64(await crypto.subtle.deriveBits({name:"PBKDF2",salt,iterations:120000,hash:"SHA-256"},k,256))}
+let ME=null,PROFS=[];
 const initial=s=>esc((s||"?").trim().charAt(0).toUpperCase());
-function authShell(inner){const a=$("#auth");a.hidden=false;document.body.style.overflow="hidden";
-  a.innerHTML=`<div class="authcard"><img class="logo big" src="${LOGO}" alt="Logo Coach IA"><div class="brand" style="text-align:center">Coach IA <span class="ver">1.0</span></div>${inner}</div>`;return a}
-async function boot(){authShell(`<div class="status" style="justify-content:center"><div class="spin"></div><b>Chargement de tes profils…</b></div>`);
-  const L=await Store.listProfiles();const keep=ls.get("cd-pid",null);const p=L.find(x=>x.id===keep);if(p)login(p,L);else showAuth(L)}
-function showAuth(L){
-  if(!L.length)return formNew(L);
-  const a=authShell(`<h2 style="text-align:center">Qui s'entraîne ?</h2>
-    <div class="avs">${L.map((p,i)=>`<button class="av" data-i="${i}"><i style="background:${p.color}">${initial(p.pseudo)}</i><span>${esc(p.pseudo)}</span></button>`).join("")}
-    <button class="av" id="avNew"><i class="plus">+</i><span>Nouveau profil</span></button></div>
-    <p class="note" style="text-align:center;margin:0">Chaque profil a ses propres séances, réglages et machines.</p>`);
-  a.querySelectorAll(".av[data-i]").forEach(b=>b.onclick=()=>formLogin(L[+b.dataset.i],L));$("#avNew").onclick=()=>formNew(L);
+function saveProfs(){ls.set("cd-profiles",PROFS)}
+function boot(){
+  PROFS=ls.get("cd-profiles",[]).filter(p=>p&&p.id&&p.pseudo).map(p=>({id:p.id,pseudo:p.pseudo,color:p.color||AVC[0],created:p.created||new Date().toISOString()}));
+  if(!PROFS.length){PROFS=[{id:"p"+Date.now(),pseudo:"Moi",color:AVC[0],created:new Date().toISOString()}]}
+  PROFS.sort((a,b)=>a.created.localeCompare(b.created));saveProfs();
+  useProfile(PROFS.find(x=>x.id===ls.get("cd-pid",null))||PROFS[0]);
 }
-const keepBox=`<label class="keep"><input type="checkbox" id="aKeep" checked> Rester connecté sur cet appareil</label>`;
-function formNew(L){
-  authShell(`<h2 style="text-align:center">Crée ton profil</h2>
-    <form id="aForm" class="aform" novalidate>
-      <label class="fld" for="aPseudo"><span class="label" style="padding:0">Pseudo</span><input id="aPseudo" maxlength="20" autocomplete="username" placeholder="Ex. : Denis"></label>
-      <label class="fld" for="aPw"><span class="label" style="padding:0">Mot de passe</span><input id="aPw" type="password" autocomplete="new-password" placeholder="4 caractères minimum"></label>
-      <label class="fld" for="aPw2"><span class="label" style="padding:0">Confirme le mot de passe</span><input id="aPw2" type="password" autocomplete="new-password"></label>
-      ${keepBox}<p class="err" id="aErr" hidden></p>
-      <button class="cta" type="submit">Créer mon profil</button>
-      <button class="small-btn" type="button" id="aHave" style="justify-self:center">J'ai déjà un compte</button>
-      ${L.length?`<button class="small-btn" type="button" id="aBack" style="justify-self:center">Retour aux profils</button>`:""}
-    </form>`);
-  if(L.length)$("#aBack").onclick=()=>showAuth(L);
-  $("#aHave").onclick=()=>formLoginName(L);
-  $("#aPseudo").focus();
-  $("#aForm").onsubmit=async ev=>{ev.preventDefault();const err=m=>{$("#aErr").textContent=m;$("#aErr").hidden=false};
-    const ps=$("#aPseudo").value.trim(),pw=$("#aPw").value,pw2=$("#aPw2").value;
-    if(ps.length<2)return err("Ton pseudo doit faire au moins 2 caractères.");
-    if(L.some(p=>p.pseudo.toLowerCase()===ps.toLowerCase()))return err("Ce pseudo est déjà pris sur cet appareil. Choisis-en un autre.");
-    if(pw.length<4)return err("Ton mot de passe doit faire au moins 4 caractères.");
-    if(pw!==pw2)return err("Les deux mots de passe ne sont pas identiques.");
-    if(!canHash())return err("Ce navigateur ne permet pas de protéger un mot de passe. Essaie depuis l'appli Claude ou un navigateur à jour.");
-    const salt=crypto.getRandomValues(new Uint8Array(16));
-    const p={id:"p"+Date.now(),pseudo:ps,salt:b64(salt),hash:await hashPw(pw,salt),created:new Date().toISOString(),color:AVC[L.length%AVC.length]};
-    await Store.saveProfile(p);L.push(p);login(p,L,$("#aKeep").checked)};
-}
-function formLoginName(L){
-  authShell(`<h2 style="text-align:center">Connexion</h2>
-    <form id="aForm" class="aform" novalidate>
-      <label class="fld" for="aPseudo"><span class="label" style="padding:0">Pseudo</span><input id="aPseudo" maxlength="20" autocomplete="username"></label>
-      <label class="fld" for="aPw"><span class="label" style="padding:0">Mot de passe</span><input id="aPw" type="password" autocomplete="current-password"></label>
-      ${keepBox}<p class="err" id="aErr" hidden></p>
-      <button class="cta" type="submit">Se connecter</button>
-      <button class="small-btn" type="button" id="aNew" style="justify-self:center">Créer un nouveau profil</button>
-    </form>`);
-  $("#aPseudo").focus();$("#aNew").onclick=()=>formNew(L);
-  $("#aForm").onsubmit=async ev=>{ev.preventDefault();const err=m=>{$("#aErr").textContent=m;$("#aErr").hidden=false};
-    const ps=$("#aPseudo").value.trim(),pw=$("#aPw").value;if(!ps||!pw)return err("Entre ton pseudo et ton mot de passe.");
-    const btn=ev.submitter||$("#aForm .cta");btn.disabled=true;btn.textContent="Vérification…";
-    const L2=await Store.listProfiles();L.splice(0,L.length,...L2);btn.disabled=false;btn.textContent="Se connecter";
-    const p=L.find(x=>x.pseudo.toLowerCase()===ps.toLowerCase());
-    if(!p)return err(`Aucun profil « ${ps} » trouvé. Dans l'appli Claude, tes profils suivent ton compte Claude ; sur la version GitHub, chaque téléphone a ses propres profils.`);
-    if(!canHash())return err("Ce navigateur ne peut pas vérifier le mot de passe.");
-    if(await hashPw(pw,unb64(p.salt))!==p.hash){err("Mot de passe incorrect. Réessaie.");$("#aPw").select();return}
-    login(p,L,$("#aKeep").checked)};
-}
-function formLogin(p,L){
-  authShell(`<div class="who"><i style="background:${p.color}">${initial(p.pseudo)}</i><h2>${esc(p.pseudo)}</h2></div>
-    <form id="aForm" class="aform" novalidate>
-      <input type="text" autocomplete="username" value="${esc(p.pseudo)}" hidden>
-      <label class="fld" for="aPw"><span class="label" style="padding:0">Mot de passe</span><input id="aPw" type="password" autocomplete="current-password"></label>
-      ${keepBox}<p class="err" id="aErr" hidden></p>
-      <button class="cta" type="submit">Se connecter</button>
-      <div class="alinks"><button class="small-btn" type="button" id="aBack">Changer de profil</button><button class="small-btn" type="button" id="aForgot">Mot de passe oublié ?</button></div>
-    </form>`);
-  $("#aPw").focus();$("#aBack").onclick=()=>showAuth(L);$("#aForgot").onclick=()=>formReset(p,L);
-  $("#aForm").onsubmit=async ev=>{ev.preventDefault();const pw=$("#aPw").value;
-    if(!canHash()){$("#aErr").textContent="Ce navigateur ne peut pas vérifier le mot de passe.";$("#aErr").hidden=false;return}
-    const h=await hashPw(pw,unb64(p.salt));
-    if(h!==p.hash){$("#aErr").textContent="Mot de passe incorrect. Réessaie.";$("#aErr").hidden=false;$("#aPw").select();return}
-    login(p,L,$("#aKeep").checked)};
-}
-function formReset(p,L){
-  authShell(`<div class="who"><i style="background:${p.color}">${initial(p.pseudo)}</i><h2>Nouveau mot de passe</h2></div>
-    <p class="note" style="margin:0;text-align:center">Choisis un nouveau mot de passe pour ${esc(p.pseudo)}. Ses séances et ses progrès sont conservés.</p>
-    <form id="aForm" class="aform" novalidate>
-      <label class="fld" for="aPw"><span class="label" style="padding:0">Nouveau mot de passe</span><input id="aPw" type="password" autocomplete="new-password" placeholder="4 caractères minimum"></label>
-      <label class="fld" for="aPw2"><span class="label" style="padding:0">Confirme</span><input id="aPw2" type="password" autocomplete="new-password"></label>
-      <p class="err" id="aErr" hidden></p>
-      <button class="cta" type="submit">Enregistrer</button>
-      <button class="small-btn" type="button" id="aBack" style="justify-self:center">Annuler</button>
-    </form>`);
-  $("#aBack").onclick=()=>formLogin(p,L);
-  $("#aForm").onsubmit=async ev=>{ev.preventDefault();const err=m=>{$("#aErr").textContent=m;$("#aErr").hidden=false};
-    const pw=$("#aPw").value,pw2=$("#aPw2").value;if(pw.length<4)return err("Au moins 4 caractères.");if(pw!==pw2)return err("Les deux mots de passe ne sont pas identiques.");
-    if(!canHash())return err("Ce navigateur ne permet pas de protéger un mot de passe.");
-    const salt=crypto.getRandomValues(new Uint8Array(16));p.salt=b64(salt);p.hash=await hashPw(pw,salt);await Store.saveProfile(p);login(p,L,true)};
-}
-function login(p,L,keep){
-  ME=Object.assign({},p,{first:!!(L[0]&&L[0].id===p.id)});
-  if(keep===true)ls.set("cd-pid",p.id);else if(keep===false)ls.set("cd-pid",null);
-  const a=$("#auth");a.hidden=true;a.innerHTML="";document.body.style.overflow="";
+function useProfile(p){
+  ME=Object.assign({},p,{first:PROFS[0].id===p.id});ls.set("cd-pid",p.id);
   S=Object.assign({mins:45,groups:["pecs","dos","jambes","fessiers","abdos"],lvl:2,eq:0,place:"home"},ls.get("cd-set-"+p.id,null)||ls.get("cd-set",{}));
   seed=Math.floor(Math.random()*1e9);update();renderMe();showTab("plan");
 }
 function renderMe(){const b=$("#meBtn");b.hidden=!ME;if(!ME)return;
-  b.innerHTML=`<i style="background:${ME.color}">${initial(ME.pseudo)}</i><span>${esc(ME.pseudo)}</span>`;
-  b.onclick=async()=>{ls.set("cd-pid",null);ME=null;renderMe();showAuth(await Store.listProfiles())}}
+  b.innerHTML=`<i style="background:${ME.color}">${initial(ME.pseudo)}</i><span>${esc(ME.pseudo)}</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>`;
+  b.onclick=openProfiles}
+function closeProfiles(){const a=$("#auth");a.hidden=true;a.innerHTML="";if($("#player").hidden&&$("#sheet").hidden)document.body.style.overflow=""}
+function openProfiles(){
+  const a=$("#auth");a.hidden=false;document.body.style.overflow="hidden";
+  a.innerHTML=`<div class="authcard pm" role="document">
+    <div class="sh-top"><h2>Profils</h2><button class="sh-x" id="pmX">Fermer</button></div>
+    <div class="plist">${PROFS.map(p=>`<button class="psel${p.id===ME.id?" on":""}" data-id="${p.id}"><i style="background:${p.color}">${initial(p.pseudo)}</i><span>${esc(p.pseudo)}</span>${p.id===ME.id?'<b class="pcur">Actif</b>':""}</button>`).join("")}</div>
+    <form id="pmRen" class="aform" novalidate><label class="fld" for="pmName"><span class="label" style="padding:0">Pseudo du profil actif</span>
+      <span class="prow2"><input id="pmName" maxlength="20" value="${esc(ME.pseudo)}" autocomplete="off"><button class="small-btn" type="submit">Renommer</button></span></label></form>
+    <form id="pmAdd" class="aform" novalidate><label class="fld" for="pmNew"><span class="label" style="padding:0">Ajouter un profil</span>
+      <span class="prow2"><input id="pmNew" maxlength="20" placeholder="Pseudo, ex. : Liana" autocomplete="off"><button class="small-btn pri" type="submit">Ajouter</button></span></label></form>
+    <p class="err" id="pmErr" hidden></p>
+    ${PROFS.length>1?`<div id="pmDelBox"><button class="small-btn" id="pmDel" type="button">Supprimer le profil « ${esc(ME.pseudo)} »</button></div>`:""}
+    <p class="note" style="margin:0;padding:0">Les profils, les séances et les machines sont enregistrés sur cet appareil.</p>
+  </div>`;
+  const err=m=>{$("#pmErr").textContent=m;$("#pmErr").hidden=false};
+  const check=(n,self)=>n.length<2?"Le pseudo doit faire au moins 2 caractères.":PROFS.some(p=>p.id!==self&&p.pseudo.toLowerCase()===n.toLowerCase())?"Ce pseudo existe déjà.":"";
+  $("#pmX").onclick=closeProfiles;a.onclick=ev=>{if(ev.target===a)closeProfiles()};
+  a.querySelectorAll(".psel").forEach(b=>b.onclick=()=>{const p=PROFS.find(x=>x.id===b.dataset.id);closeProfiles();if(p.id!==ME.id)useProfile(p)});
+  $("#pmRen").onsubmit=ev=>{ev.preventDefault();const n=$("#pmName").value.trim(),e=check(n,ME.id);if(e)return err(e);
+    PROFS.find(x=>x.id===ME.id).pseudo=n;ME.pseudo=n;saveProfs();renderMe();showTab("plan");openProfiles()};
+  $("#pmAdd").onsubmit=ev=>{ev.preventDefault();const n=$("#pmNew").value.trim(),e=check(n,"");if(e)return err(e);
+    const p={id:"p"+Date.now(),pseudo:n,color:AVC[PROFS.length%AVC.length],created:new Date().toISOString()};PROFS.push(p);saveProfs();closeProfiles();useProfile(p)};
+  if($("#pmDel"))$("#pmDel").onclick=()=>{$("#pmDelBox").innerHTML=`<div class="confirm2"><b>Supprimer « ${esc(ME.pseudo)} » ?</b><span>Ses séances et ses machines enregistrées sur cet appareil seront effacées.</span>
+      <span class="prow2"><button class="small-btn danger" id="pmYes" type="button">Supprimer</button><button class="small-btn" id="pmNo" type="button">Annuler</button></span></div>`;
+    $("#pmNo").onclick=openProfiles;
+    $("#pmYes").onclick=()=>{const id=ME.id,first=ME.first;const gone=r=>r.pid===id||(!r.pid&&first);
+      ls.set("cd-hist",ls.get("cd-hist",[]).filter(r=>!gone(r)));ls.set("cd-scans",ls.get("cd-scans",[]).filter(r=>!gone(r)));
+      PROFS=PROFS.filter(p=>p.id!==id);saveProfs();closeProfiles();useProfile(PROFS[0])}};
+}
 const mine=r=>!ME||r.pid===ME.id||(!r.pid&&ME.first);
 
 /* ---------- progrès ---------- */
@@ -1434,7 +1367,7 @@ function showTab(t){
 $("#tabPlan").onclick=()=>showTab("plan");$("#tabMach").onclick=()=>showTab("mach");$("#tabProg").onclick=()=>showTab("prog");
 $("#go").onclick=startSession;
 {const d=new Date();$("#today").textContent=JOURS[d.getDay()].replace(".","")+" "+d.getDate()+" "+MOIS[d.getMonth()]}
-boot();update();try{initMachine()}catch(e){}
+try{initMachine()}catch(e){}boot();
 </script>
 
 </body>
