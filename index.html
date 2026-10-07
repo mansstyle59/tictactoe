@@ -1,20 +1,31 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#fafaf9" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <title>Tic · Tac · Toe</title>
-    <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      html, body, #root { height: 100%; }
-      body { background: #fafaf9; -webkit-tap-highlight-color: transparent; }
-    </style>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/main.jsx"></script>
-  </body>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ClubManager</title>
+  <meta name="description" content="ClubManager — la gestion de club sportif simple : équipes, entraînements, matchs, convocations, bénévoles, cotisations.">
+  <meta name="theme-color" content="#2B2F8F">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ClubManager">
+  <meta property="og:title" content="ClubManager">
+  <meta property="og:description" content="Tout votre club, dans une seule appli.">
+  <meta property="og:image" content="icons/icon-512.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app"><div class="splash"><img src="icons/logo.svg" alt="" width="84" height="84"><b>Club<span>Manager</span></b></div></div>
+  <div id="toasts" aria-live="polite"></div>
+  <script src="vendor/supabase.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
 </html>
