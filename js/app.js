@@ -455,7 +455,7 @@ function shell() {
     </aside>
     <div class="main">
       <header class="topbar">
-        <button class="top-club" id="topClub" aria-label="Changer de club">${clubImg}</button>
+        <button class="top-club" id="topClub" aria-label="Changer de club">${clubImg}<span class="top-club-name"><b>${esc(c?.name || 'ClubManager')}</b><small>${role.sa() && !S.roles.length ? 'Super admin' : ROLE_LABEL[S.roles[0]] || 'Membre'}${S.clubs?.length > 1 ? ' · changer ⌄' : ''}</small></span></button>
         <h1 id="pageTitle" class="compact-title"></h1>
         <div class="top-actions">
           <button class="icon-btn" id="bell" aria-label="Notifications">${icon('bell')}<i class="count" id="notifCount" hidden></i></button>
@@ -543,7 +543,7 @@ export async function route(silent = false) {
   document.body.dataset.depth = path.includes('/') ? 'detail' : 'root';
   $$('[data-r]').forEach((a) => a.classList.toggle('on', a.dataset.r === top || (top === 'activite' && a.dataset.r === 'activites') || (top === 'equipe' && a.dataset.r === 'equipes') || (top === 'groupe' && a.dataset.r === 'messages')));
   const nav = NAV.find((n) => n.r === top);
-  setTitle(top === '' ? (S.club?.name || 'Accueil') : (innerWidth < 900 && nav?.short) || nav?.label || '');
+  setTitle(top === '' ? (innerWidth < 900 ? 'Accueil' : (S.club?.name || 'Accueil')) : (innerWidth < 900 && nav?.short) || nav?.label || '');
   if (!silent) { view.innerHTML = SKELETON; window.scrollTo(0, 0); }
   try { await fn(view, ...params); }
   catch (e) { console.error(e); view.innerHTML = `<div class="empty"><div class="empty-emoji">⚠️</div><h3>Impossible d'afficher cette page</h3><p>${esc(errMsg(e))}</p><button class="btn ghost" onclick="location.reload()">Recharger</button></div>`; }
