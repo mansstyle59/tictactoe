@@ -515,10 +515,11 @@ export async function superAdmin(el) {
   const settings = await q(sb.from('platform_settings').select('*'));
   const tabs = [['clubs', 'Clubs'], ['users', 'Utilisateurs'], ['reports', `Signalements (${o.reports.filter((r) => r.status === 'open').length})`], ['log', 'Activité'], ['settings', 'Paramètres']];
   let body = '';
-  if (SA.tab === 'clubs') body = `<div class="card table-card"><div class="table-wrap"><table class="table"><thead><tr><th>Club</th><th>Sport</th><th>Membres</th><th>Joueurs</th><th>Offre</th><th>Statut</th></tr></thead>
+  if (SA.tab === 'clubs') body = `<div class="card table-card"><div class="table-wrap"><table class="table"><thead><tr><th>Club</th><th>Sport</th><th>Membres</th><th>Joueurs</th><th>Offre</th><th>Statut</th><th></th></tr></thead>
     <tbody>${o.club_list.map((c) => `<tr><td><b>${esc(c.name)}</b><br><small class="muted">${esc(c.city || '')} · créé ${fmt.date(c.created_at)} · <a href="#/club/${c.slug}" target="_blank">page</a></small></td><td>${SPORTS[c.sport]?.emoji || ''}</td><td>${c.members}</td><td>${c.players}</td>
       <td><select data-plan="${c.id}" aria-label="Offre">${['gratuit', 'standard', 'premium'].map((p) => `<option ${c.plan === p ? 'selected' : ''}>${p}</option>`).join('')}</select></td>
-      <td><button class="btn sm ${c.status === 'active' ? 'ghost' : 'danger'}" data-sus="${c.id}" data-st="${c.status}">${c.status === 'active' ? '🟢 Actif' : '⛔ Suspendu'}</button></td></tr>`).join('')}</tbody></table></div></div>`;
+      <td><button class="btn sm ${c.status === 'active' ? 'ghost' : 'danger'}" data-sus="${c.id}" data-st="${c.status}">${c.status === 'active' ? '🟢 Actif' : '⛔ Suspendu'}</button></td>
+      <td><button class="btn sm primary" data-manage="${c.id}">Gérer</button></td></tr>`).join('')}</tbody></table></div></div>`;
   else if (SA.tab === 'users') body = `<div class="card table-card"><div class="table-wrap"><table class="table"><thead><tr><th>Nom</th><th>Email</th><th>Clubs</th><th>Inscrit</th></tr></thead>
     <tbody>${o.user_list.map((u) => `<tr><td>${esc(u.full_name || '')}${u.super ? ' 🛡️' : ''}</td><td>${esc(u.email || '')}</td><td>${u.clubs}</td><td>${fmt.date(u.created_at)}</td></tr>`).join('')}</tbody></table></div></div>`;
   else if (SA.tab === 'reports') body = o.reports.length ? `<div class="card">${o.reports.map((r) => `<div class="member"><span class="emoji-box">${r.status === 'open' ? '🚩' : '✅'}</span><div class="grow"><b>${esc(r.club || 'Plateforme')}</b><p class="pre">${esc(r.reason)}</p><small>${fmt.rel(r.created_at)}</small></div>
@@ -545,6 +546,7 @@ export async function superAdmin(el) {
     await q(sb.from('clubs').update({ status: sus ? 'suspended' : 'active' }).eq('id', b.dataset.sus)); superAdmin(el);
   }));
   $$('[data-close]', el).forEach((b) => (b.onclick = async () => { await q(sb.from('reports').update({ status: 'closed' }).eq('id', b.dataset.close)); superAdmin(el); }));
+  $$('[data-manage]', el).forEach((b) => (b.onclick = async () => { await loadMemberships(); location.hash = '#/'; await selectClub(b.dataset.manage); toast('Tu gères ce club en tant que super administrateur'); }));
   $('#saveSet', el) && ($('#saveSet', el).onclick = async () => {
     const plans = settings.find((s) => s.key === 'plans')?.value || {};
     $$('[data-lim]', el).forEach((i) => { const [p, k] = i.dataset.lim.split('.'); plans[p] = { ...(plans[p] || {}), [k]: +i.value }; });

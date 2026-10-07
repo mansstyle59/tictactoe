@@ -1,5 +1,5 @@
 // ClubManager — démarrage, connexion, navigation
-import { sb, S, role, SPORTS, esc, $, $$, toast, modal, closeModal, formHTML, readForm, errMsg, q, applyBrand, avatar, fmt, ROLE_LABEL } from './core.js';
+import { sb, S, role, SPORTS, esc, $, $$, toast, modal, closeModal, formHTML, readForm, errMsg, q, applyBrand, avatar, fmt, ROLE_LABEL, haptic } from './core.js';
 import * as V from './views.js';
 import * as V2 from './views2.js';
 
@@ -36,6 +36,7 @@ const ICONS = {
   more: '<circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/>',
   shield: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',
   bell: '<path d="M6 16V11a6 6 0 1 1 12 0v5l2 2H4zM10 21h4"/>',
+  swap: '<path d="M7 7h12l-3-3M17 17H5l3 3"/>',
 };
 export const icon = (n) => `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n] || ''}</svg>`;
 
@@ -51,8 +52,36 @@ const ROUTES = [
 ];
 
 // ---------------------------------------------------------------- démarrage
+function banner(id, html, cls = '') {
+  let b = document.getElementById(id);
+  if (!html) { b?.remove(); return; }
+  if (!b) { b = document.createElement('div'); b.id = id; b.className = `sysbanner ${cls}`; document.body.append(b); }
+  b.innerHTML = html;
+  return b;
+}
+function watchSystem() {
+  const net = () => banner('offline', navigator.onLine ? '' : '<span>Hors connexion — les dernières données restent affichées</span>', 'warn');
+  addEventListener('online', () => { net(); toast('Connexion rétablie'); });
+  addEventListener('offline', net); net();
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.register('./sw.js').then((reg) => {
+    const ask = (w) => {
+      const b = banner('update', '<span>Une nouvelle version est disponible</span><button class="btn sm primary" id="doUpdate">Mettre à jour</button>');
+      b.querySelector('#doUpdate').onclick = () => { w.postMessage('skip'); };
+    };
+    if (reg.waiting && navigator.serviceWorker.controller) ask(reg.waiting);
+    reg.addEventListener('updatefound', () => {
+      const w = reg.installing;
+      w?.addEventListener('statechange', () => { if (w.state === 'installed' && navigator.serviceWorker.controller) ask(w); });
+    });
+    setInterval(() => reg.update().catch(() => {}), 30 * 60 * 1000);
+  }).catch(() => {});
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (!reloaded) { reloaded = true; location.reload(); } });
+}
+
 async function boot() {
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
+  watchSystem();
   const hash = location.hash.slice(2);
 
   // Page publique d'un club : pas besoin de compte
@@ -99,12 +128,19 @@ async function afterLogin(session) {
 export async function loadMemberships() {
   S.memberships = await q(sb.from('memberships').select('club_id, role').eq('user_id', S.user.id));
   const ids = [...new Set(S.memberships.map((m) => m.club_id))];
+  if (S.profile?.is_super_admin) {
+    // Le super administrateur voit et gère tous les clubs de la plateforme
+    S.clubs = await q(sb.from('clubs').select('*').order('name'));
+    for (const c of S.clubs) if (!ids.includes(c.id)) S.memberships.push({ club_id: c.id, role: 'admin', virtual: true });
+    return;
+  }
   S.clubs = ids.length ? await q(sb.from('clubs').select('*').in('id', ids).order('name')) : [];
 }
 
 export async function selectClub(id) {
   S.club = S.clubs.find((c) => c.id === id);
-  S.roles = S.memberships.filter((m) => m.club_id === id).map((m) => m.role);
+  S.roles = [...new Set(S.memberships.filter((m) => m.club_id === id).map((m) => m.role))];
+  if (S.profile?.is_super_admin && !S.roles.includes('admin')) S.roles.push('admin');
   localStorage.setItem('cm_club', id);
   S.cache = {};
   applyBrand(S.club);
@@ -136,8 +172,43 @@ export async function refreshClubData() {
 export const memberName = (id) => S.members.find((m) => m.id === id)?.full_name || '';
 
 // ---------------------------------------------------------------- connexion
+const SLIDES = [
+  { t: 'Les convocations en un geste', p: 'Joueurs et parents répondent en une touche. Tu vois tout de suite qui vient au match.',
+    art: `<svg viewBox="0 0 280 220" class="slide-art"><rect x="40" y="18" width="200" height="184" rx="26" fill="#fff"/><rect x="58" y="40" width="88" height="10" rx="5" fill="#E6E4F5"/>
+      <text x="58" y="78" font-size="19" font-weight="800" fill="#191A2E" font-family="-apple-system,system-ui,sans-serif">U13 vs Gruissan</text>
+      <text x="58" y="100" font-size="13" fill="#6B6E85" font-family="-apple-system,system-ui,sans-serif">Samedi à 15:00 — Gymnase</text>
+      <rect x="58" y="122" width="52" height="44" rx="12" fill="#E3F6EC" stroke="#1F9D61" stroke-width="2.5"/><path d="M72 144l7 7 14-15" fill="none" stroke="#1F9D61" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="116" y="122" width="52" height="44" rx="12" fill="#F2F2F7"/><path d="M134 136l16 16M150 136l-16 16" stroke="#B3B5C6" stroke-width="3.5" stroke-linecap="round"/>
+      <rect x="174" y="122" width="48" height="44" rx="12" fill="#F2F2F7"/><text x="198" y="152" text-anchor="middle" font-size="22" font-weight="800" fill="#B3B5C6" font-family="-apple-system,system-ui,sans-serif">?</text>
+      <circle cx="232" cy="26" r="18" fill="#FF7A2F"/><text x="232" y="32" text-anchor="middle" font-size="16" font-weight="800" fill="#fff" font-family="-apple-system,system-ui,sans-serif">3</text></svg>` },
+  { t: 'Tout le calendrier du club', p: 'Entraînements, matchs, tournois et fêtes du club au même endroit, équipe par équipe.',
+    art: `<svg viewBox="0 0 280 220" class="slide-art"><rect x="34" y="24" width="212" height="176" rx="26" fill="#fff"/><rect x="34" y="24" width="212" height="44" rx="22" fill="#5B3FD6"/><rect x="34" y="46" width="212" height="22" fill="#5B3FD6"/>
+      <text x="56" y="53" font-size="16" font-weight="800" fill="#fff" font-family="-apple-system,system-ui,sans-serif">Octobre</text>
+      ${[0, 1, 2, 3].map((r) => [0, 1, 2, 3, 4, 5, 6].map((c) => `<rect x="${50 + c * 27}" y="${82 + r * 28}" width="20" height="20" rx="6" fill="${(r * 7 + c) % 9 === 2 ? '#5B3FD6' : (r * 7 + c) % 7 === 4 ? '#FF7A2F' : (r * 7 + c) % 11 === 6 ? '#2F9E6E' : '#F2F2F7'}"/>`).join('')).join('')}</svg>` },
+  { t: 'Une équipe autour de l’équipe', p: 'Bénévoles, cotisations, documents et messages : le club s’organise sans tableur ni groupe de discussion.',
+    art: `<svg viewBox="0 0 280 220" class="slide-art">${[[70, '#FF7A2F', '4'], [140, '#5B3FD6', '10'], [210, '#2F9E6E', '23']].map(([x, c, n], i) => `<g transform="translate(${x - 40} ${i === 1 ? 30 : 56})"><path d="M18 0h44l18 16-12 16-8-6v74H20V26l-8 6L0 16z" fill="${c}"/><text x="40" y="68" text-anchor="middle" font-size="28" font-weight="900" fill="#fff" font-family="-apple-system,system-ui,sans-serif">${n}</text></g>`).join('')}
+      <rect x="40" y="176" width="200" height="12" rx="6" fill="#fff" opacity=".5"/></svg>` },
+];
+function welcomeSlides() {
+  $('#app').innerHTML = `<div class="welcome"><div class="welcome-top"><div class="auth-brand small"><img src="icons/logo.svg" alt="" width="34" height="34"><span>Club<b>Manager</b></span></div><button class="link" id="skip">Passer</button></div>
+    <div class="slides" id="slides">${SLIDES.map((s) => `<section class="slide">${s.art}<h1>${s.t}</h1><p>${s.p}</p></section>`).join('')}</div>
+    <div class="dots" id="dots">${SLIDES.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>
+    <div class="welcome-actions"><button class="btn primary block big" id="wNext">Continuer</button><button class="link" id="wLogin">J'ai déjà un compte</button></div></div>`;
+  const sl = $('#slides'); let i = 0;
+  const done = (mode) => { localStorage.setItem('cm_seen', '1'); renderAuth(mode); };
+  sl.addEventListener('scroll', () => {
+    i = Math.round(sl.scrollLeft / sl.clientWidth);
+    $$('#dots i').forEach((d, k) => d.classList.toggle('on', k === i));
+    $('#wNext').textContent = i === SLIDES.length - 1 ? 'Créer mon compte' : 'Continuer';
+  }, { passive: true });
+  $('#wNext').onclick = () => { haptic(); if (i < SLIDES.length - 1) sl.scrollTo({ left: (i + 1) * sl.clientWidth, behavior: 'smooth' }); else done('signup'); };
+  $('#wLogin').onclick = () => done('login');
+  $('#skip').onclick = () => done('login');
+}
+
 function renderAuth(mode = 'login') {
   applyBrand(null);
+  if (!localStorage.getItem('cm_seen') && !localStorage.getItem('cm_invite') && innerWidth < 900) return welcomeSlides();
   const invite = localStorage.getItem('cm_invite');
   $('#app').innerHTML = `<div class="auth">
     <section class="auth-hero">
@@ -296,39 +367,72 @@ function shell() {
   const items = navFor();
   const mobileMain = ['', 'calendrier', 'activites', 'messages'];
   const c = S.club;
+  const clubImg = c?.logo_url ? `<img src="${esc(c.logo_url)}" alt="">` : '<img src="icons/logo.svg" alt="">';
   $('#app').innerHTML = `<div class="layout">
     <aside class="sidebar">
-      <a class="side-brand" href="#/">${c?.logo_url ? `<img src="${esc(c.logo_url)}" alt="">` : '<img src="icons/logo.svg" alt="">'}
+      <a class="side-brand" href="#/">${clubImg}
         <span><b>${esc(c?.name || 'ClubManager')}</b><small>${c ? SPORTS[c.sport]?.emoji + ' ' + esc(S.season?.name || '') : ''}</small></span></a>
       <nav>${items.map((n) => `<a href="#/${n.r}" data-r="${n.r}">${icon(n.icon)}<span>${n.label}</span>${n.r === 'messages' ? '<i class="dot" data-unread hidden></i>' : ''}</a>`).join('')}
       ${role.sa() ? `<a href="#/admin" data-r="admin">${icon('shield')}<span>Super Admin</span></a>` : ''}</nav>
       <div class="side-foot">
-        ${S.clubs.length > 1 || true ? `<button class="side-club" id="switchClub">⇄ Changer de club</button>` : ''}
-        <a class="side-user" href="#/profil">${avatar(S.profile?.full_name)}<span><b>${esc(S.profile?.full_name || '')}</b><small>${S.roles.map((r) => ROLE_LABEL[r]).join(' · ')}</small></span></a>
+        <button class="side-club" id="switchClub">${icon('swap')}<span>Changer de club</span></button>
+        <a class="side-user" href="#/profil">${avatar(S.profile?.full_name)}<span><b>${esc(S.profile?.full_name || '')}</b><small>${S.roles.map((r) => ROLE_LABEL[r]).join(', ')}</small></span></a>
       </div>
     </aside>
     <div class="main">
       <header class="topbar">
-        <a class="top-brand" href="#/">${c?.logo_url ? `<img src="${esc(c.logo_url)}" alt="">` : '<img src="icons/logo.svg" alt="">'}<b>${esc(c?.name || 'ClubManager')}</b></a>
-        <h1 id="pageTitle"></h1>
+        <button class="top-club" id="topClub" aria-label="Changer de club">${clubImg}</button>
+        <h1 id="pageTitle" class="compact-title"></h1>
         <div class="top-actions">
           <button class="icon-btn" id="bell" aria-label="Notifications">${icon('bell')}<i class="count" id="notifCount" hidden></i></button>
           <a class="icon-btn only-mobile" href="#/profil" aria-label="Mon profil">${avatar(S.profile?.full_name, null, 'sm')}</a>
         </div>
       </header>
+      <div class="ptr" id="ptr" aria-hidden="true"><span></span></div>
+      <div class="large-title-wrap"><h1 id="largeTitle" class="large-title"></h1></div>
       <main id="view" tabindex="-1"></main>
     </div>
-    <nav class="tabbar">${items.filter((n) => mobileMain.includes(n.r)).map((n) => `<a href="#/${n.r}" data-r="${n.r}">${icon(n.icon)}<span>${n.short || n.label}</span>${n.r === 'messages' ? '<i class="dot" data-unread hidden></i>' : ''}</a>`).join('')}
+    <nav class="tabbar" aria-label="Navigation principale">${items.filter((n) => mobileMain.includes(n.r)).map((n) => `<a href="#/${n.r}" data-r="${n.r}">${icon(n.icon)}<span>${n.short || n.label}</span>${n.r === 'messages' ? '<i class="dot" data-unread hidden></i>' : ''}</a>`).join('')}
       <button id="moreBtn">${icon('more')}<span>Plus</span></button></nav>
   </div>`;
   $('#switchClub').onclick = switchClub;
-  $('#moreBtn').onclick = () => moreSheet(items.filter((n) => !mobileMain.includes(n.r)));
+  $('#topClub').onclick = switchClub;
+  $('#moreBtn').onclick = () => { haptic(); moreSheet(items.filter((n) => !mobileMain.includes(n.r))); };
+  $$('.tabbar a').forEach((a) => a.addEventListener('click', () => { haptic(); if (a.classList.contains('on')) window.scrollTo({ top: 0, behavior: 'smooth' }); }));
   $('#bell').onclick = V2.notificationsPanel;
-  window.onhashchange = route;
+  new IntersectionObserver(([e]) => document.body.classList.toggle('scrolled', !e.isIntersecting), { rootMargin: '-56px 0px 0px 0px' }).observe($('#largeTitle'));
+  pullToRefresh();
+  window.onhashchange = () => route();
   route();
   watchRealtime();
   refreshCounters();
   if (localStorage.getItem('cm_welcome')) { localStorage.removeItem('cm_welcome'); V.welcomeTour(); }
+}
+
+// Tirer vers le bas pour actualiser (mobile)
+let ptrBound = false;
+function pullToRefresh() {
+  if (ptrBound) return; ptrBound = true;
+  let y0 = null, d = 0, busy = false;
+  const P = () => $('#ptr');
+  addEventListener('touchstart', (e) => { if (scrollY <= 0 && !$('.modal-wrap') && !busy) { y0 = e.touches[0].clientY; d = 0; } }, { passive: true });
+  addEventListener('touchmove', (e) => {
+    if (y0 == null) return; d = e.touches[0].clientY - y0;
+    const ptr = P(); if (!ptr) return;
+    if (d <= 0) { ptr.style.cssText = ''; return; }
+    const p = Math.min(d, 120);
+    ptr.style.transform = `translateY(${p * 0.6}px)`; ptr.style.opacity = Math.min(1, p / 70);
+    ptr.classList.toggle('ready', d > 80);
+  }, { passive: true });
+  addEventListener('touchend', async () => {
+    if (y0 == null) return; y0 = null;
+    const ptr = P(); if (!ptr) return;
+    if (d > 80 && !busy) {
+      busy = true; haptic(12); ptr.classList.add('spin');
+      try { if (S.club) await refreshClubData(); S.cache = {}; await route(true); refreshCounters(); } finally { busy = false; }
+    }
+    ptr.classList.remove('spin', 'ready'); ptr.style.cssText = '';
+  });
 }
 
 function moreSheet(items) {
@@ -351,7 +455,8 @@ function switchClub() {
   } });
 }
 
-export async function route() {
+const SKELETON = `<div class="skel"><div class="sk sk-hero"></div><div class="sk-row"><div class="sk"></div><div class="sk"></div><div class="sk"></div></div><div class="sk sk-line"></div><div class="sk sk-line short"></div><div class="sk sk-card"></div></div>`;
+export async function route(silent = false) {
   const path = location.hash.replace(/^#\/?/, '');
   if (path.startsWith('club/')) return V2.publicPage($('#app'), path.slice(5));
   const view = $('#view');
@@ -360,15 +465,20 @@ export async function route() {
   for (const [re, f] of ROUTES) { const m = path.match(re); if (m) { fn = f; params = m.slice(1); break; } }
   if (!fn) { location.hash = '#/'; return; }
   const top = path.split('/')[0];
+  document.body.dataset.depth = path.includes('/') ? 'detail' : 'root';
   $$('[data-r]').forEach((a) => a.classList.toggle('on', a.dataset.r === top || (top === 'activite' && a.dataset.r === 'activites') || (top === 'equipe' && a.dataset.r === 'equipes')));
   const nav = NAV.find((n) => n.r === top);
-  setTitle(nav?.label || '');
-  view.innerHTML = '<div class="loading"><span></span><span></span><span></span></div>';
-  window.scrollTo(0, 0);
+  setTitle(top === '' ? (S.club?.name || 'Accueil') : (innerWidth < 900 && nav?.short) || nav?.label || '');
+  if (!silent) { view.innerHTML = SKELETON; window.scrollTo(0, 0); }
   try { await fn(view, ...params); }
-  catch (e) { console.error(e); view.innerHTML = `<div class="empty"><div class="empty-emoji">⚠️</div><h3>Oups</h3><p>${esc(errMsg(e))}</p><button class="btn ghost" onclick="location.reload()">Recharger</button></div>`; }
+  catch (e) { console.error(e); view.innerHTML = `<div class="empty"><div class="empty-emoji">⚠️</div><h3>Impossible d'afficher cette page</h3><p>${esc(errMsg(e))}</p><button class="btn ghost" onclick="location.reload()">Recharger</button></div>`; }
+  if (!silent && !matchMedia('(prefers-reduced-motion: reduce)').matches) { view.classList.remove('enter'); void view.offsetWidth; view.classList.add('enter'); }
 }
-export const setTitle = (t) => { const h = $('#pageTitle'); if (h) h.textContent = t; document.title = t ? `${t} · ClubManager` : 'ClubManager'; };
+export const setTitle = (t) => {
+  const h = $('#pageTitle'), l = $('#largeTitle');
+  if (h) h.textContent = t; if (l) l.textContent = t;
+  document.title = t ? `${t} · ClubManager` : 'ClubManager';
+};
 
 // ---------------------------------------------------------------- temps réel & compteurs
 let channel;

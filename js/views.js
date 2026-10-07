@@ -1,6 +1,6 @@
 // ClubManager — tableau de bord, calendrier, activités, équipes, joueurs
 import { sb, S, role, sport, SPORTS, KINDS, kindEmoji, esc, $, $$, fmt, toast, modal, closeModal, confirmBox, formHTML, readForm,
-  errMsg, q, empty, avatar, badge, fullName, toLocalInput, fromLocalInput, planLimit, uid } from './core.js';
+  errMsg, q, empty, avatar, badge, fullName, toLocalInput, fromLocalInput, planLimit, uid, haptic } from './core.js';
 import { icon, memberName, refreshClubData, setTitle, refreshCounters, installApp, isStandalone } from './app.js';
 
 export const logoBlock = () => '<div class="auth-brand"><img src="icons/logo.svg" alt="" width="48" height="48"><span>Club<b>Manager</b></span></div>';
@@ -51,10 +51,13 @@ export async function dashboard(el) {
   const fam = role.family();
   const parts = [];
   const greet = (S.profile?.full_name || '').split(' ')[0];
-  parts.push(`<div class="hello"><div><h2>Bonjour ${esc(greet)} 👋</h2><p class="muted">${fmt.dayLong(now)} · ${esc(S.club.name)}</p></div>
-    ${staff ? `<button class="btn primary" id="quickAdd">＋ Ajouter</button>` : ''}</div>`);
+  parts.push(`<div class="hello"><div><p class="hello-date">${fmt.dayLong(now)}</p><h2>Bonjour ${esc(greet)} 👋</h2></div>
+    ${staff ? `<button class="btn primary round" id="quickAdd" aria-label="Ajouter"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span>Ajouter</span></button>` : ''}</div>`);
 
-  if (!isStandalone()) parts.push(`<div class="install-card"><img src="icons/icon-192.png" alt="" width="44" height="44"><div><b>Installe ClubManager sur ton téléphone</b><small>Accès en 1 touche, comme une vraie appli.</small></div><button class="btn sm primary" id="installBtn">Installer</button></div>`);
+  const nextGame = soon.find((a) => ['match', 'tournament'].includes(a.kind)) || soon.find((a) => a.kind === 'training');
+  if (nextGame) parts.push(await heroCard(nextGame));
+  else if (staff) parts.push(`<div class="hero hero-empty"><div class="hero-court" aria-hidden="true">${COURT}</div><div class="hero-body"><p class="hero-when">Rien de prévu pour l'instant</p><h3>Programme le prochain match</h3>
+    <p>Les joueurs de l'équipe seront convoqués automatiquement.</p><button class="btn white" id="heroAdd">＋ Ajouter un match</button></div></div>`);
 
   if (staff) {
     const [players, dues, tasks, pend] = await Promise.all([
@@ -120,7 +123,11 @@ export async function dashboard(el) {
 
   el.innerHTML = parts.join('');
   bindConvButtons(el, () => dashboard(el));
+  if (!isStandalone() && !localStorage.getItem('cm_noinstall')) el.insertAdjacentHTML('beforeend', `<div class="install-card"><img src="icons/icon-192.png" alt="" width="48" height="48"><div><b>Installe ClubManager</b><small>Ajoute l'appli à ton écran d'accueil pour l'ouvrir en une touche.</small></div><button class="btn sm white" id="installBtn">Installer</button><button class="icon-btn" id="noInstall" aria-label="Masquer">✕</button></div>`);
   $('#installBtn', el) && ($('#installBtn', el).onclick = installApp);
+  $('#noInstall', el) && ($('#noInstall', el).onclick = () => { localStorage.setItem('cm_noinstall', '1'); $('.install-card', el).remove(); });
+  $$('.hero[data-href]', el).forEach((h) => { const go = (e) => { if (!e.target.closest('button')) location.hash = h.dataset.href; }; h.onclick = go; h.onkeydown = (e) => { if (e.key === 'Enter') go(e); }; });
+  $('#heroAdd', el) && ($('#heroAdd', el).onclick = () => S.teams.length ? activityForm({ kind: 'match', team_id: S.teams.length === 1 ? S.teams[0].id : '' }, () => dashboard(el)) : (location.hash = '#/equipes'));
   $('#quickAdd', el) && ($('#quickAdd', el).onclick = quickAdd);
   $$('[data-check]', el).forEach((b) => (b.onclick = () => (location.hash = b.dataset.check)));
 
@@ -169,6 +176,36 @@ export function welcomeTour() {
   actions: [{ label: "C'est parti !", cls: 'primary' }] });
 }
 
+// Carte « prochain match » : tableau d'affichage
+const COURT = `<svg viewBox="0 0 400 220" preserveAspectRatio="xMidYMid slice"><g fill="none" stroke="currentColor" stroke-width="2"><rect x="-10" y="20" width="420" height="180" rx="4"/><path d="M200 20v180"/><circle cx="200" cy="110" r="36"/><path d="M-10 60h70a50 50 0 0 1 0 100H-10M410 60h-70a50 50 0 0 0 0 100h70"/><path d="M-10 35c140 0 140 150 0 150M410 35c-140 0-140 150 0 150"/></g></svg>`;
+const until = (d) => {
+  const days = Math.round((startOfDay(d) - startOfDay()) / 864e5);
+  return days === 0 ? "Aujourd'hui" : days === 1 ? 'Demain' : days < 7 ? `Dans ${days} jours` : fmt.date(d);
+};
+async function heroCard(a) {
+  const team = S.teams.find((t) => t.id === a.team_id);
+  const isMatch = a.kind !== 'training';
+  let extra = '';
+  if (a.team_id && role.staff()) {
+    const att = await q(sb.from('attendance').select('response').eq('activity_id', a.id)).catch(() => []);
+    const ok = att.filter((x) => x.response === 'available').length;
+    extra = att.length ? `<div class="hero-meter"><div class="hero-bar"><i style="width:${Math.round((ok / att.length) * 100)}%"></i></div><small>${ok} disponible${ok > 1 ? 's' : ''} sur ${att.length} convoqué${att.length > 1 ? 's' : ''}</small></div>` : '';
+  } else if (role.family()) {
+    const mine = await myPlayerIds();
+    if (mine.length) {
+      const att = await q(sb.from('attendance').select('*').eq('activity_id', a.id).in('player_id', mine)).catch(() => []);
+      if (att.length) extra = `<div class="hero-rsvp">${att.map((x) => `<div class="resp" data-a="${a.id}" data-p="${x.player_id}">${['available', 'unavailable', 'maybe'].map((r) =>
+        `<button class="${x.response === r ? 'on ' + RESP[r][2] : ''}" data-resp="${r}" aria-label="${RESP[r][1]}">${RESP[r][0]} <span>${RESP[r][1]}</span></button>`).join('')}</div>`).join('')}</div>`;
+    }
+  }
+  return `<div class="hero" role="link" tabindex="0" data-href="#/activite/${a.id}"><div class="hero-court" aria-hidden="true">${COURT}</div>
+    <div class="hero-body"><p class="hero-when"><b>${until(a.starts_at)}</b> à ${fmt.time(a.starts_at)}</p>
+    ${isMatch && a.opponent ? `<div class="hero-vs"><span class="hero-team">${esc(team?.name || S.club.name)}</span><span class="hero-x">${a.is_home === false ? '@' : 'vs'}</span><span class="hero-team">${esc(a.opponent)}</span></div>`
+      : `<h3>${kindEmoji(a)} ${esc(a.title)}</h3>`}
+    <p class="hero-place">${a.location ? '📍 ' + esc(a.location) : ''}${isMatch && a.kind === 'match' ? (a.is_home === false ? ' — à l’extérieur' : ' — à domicile') : ''}${a.meet_at ? ` — rendez-vous ${fmt.time(a.meet_at)}` : ''}</p>
+    ${extra}</div></div>`;
+}
+
 // Convocation avec boutons de réponse
 function convRow(x, players) {
   const a = x.activities; const p = players.find((pl) => pl.id === x.player_id);
@@ -178,7 +215,8 @@ function convRow(x, players) {
       `<button class="${x.response === r ? 'on ' + RESP[r][2] : ''}" data-resp="${r}" title="${RESP[r][1]}" aria-label="${RESP[r][1]}">${RESP[r][0]}</button>`).join('')}</div></div>`;
 }
 export function bindConvButtons(root, after) {
-  $$('[data-resp]', root).forEach((b) => (b.onclick = async () => {
+  $$('[data-resp]', root).forEach((b) => (b.onclick = async (e) => {
+    e.preventDefault(); e.stopPropagation(); haptic(10);
     const box = b.closest('.resp');
     try {
       await q(sb.from('attendance').update({ response: b.dataset.resp }).eq('activity_id', box.dataset.a).eq('player_id', box.dataset.p));
@@ -659,7 +697,7 @@ export async function players(el) {
   const f = list.filter((p) => (!PL.team || (PL.team === 'none' ? !p.team_id : p.team_id === PL.team)) && (!PL.lic || p.license_status === PL.lic)
     && (!PL.search || `${p.first_name} ${p.last_name} ${p.license_no || ''} ${p.jersey || ''}`.toLowerCase().includes(PL.search.toLowerCase())));
   const LIC = { valide: ['Licence valide', 'ok'], en_attente: ['Licence en attente', 'warn'], expiree: ['Licence expirée', 'bad'] };
-  el.innerHTML = `<div class="toolbar"><input type="search" id="ps" placeholder="🔍 Rechercher un joueur…" value="${esc(PL.search)}" aria-label="Rechercher">
+  el.innerHTML = `<div class="toolbar"><input type="search" id="ps" placeholder="Rechercher un joueur" value="${esc(PL.search)}" aria-label="Rechercher">
     <div class="row gap wrap">${role.staff() ? `<button class="btn ghost" id="bulk">⚡ Ajout rapide</button><button class="btn primary" id="newP">＋ Joueur</button>` : ''}</div></div>
     <div class="filters"><select id="pt" aria-label="Équipe"><option value="">Toutes les équipes</option><option value="none" ${PL.team === 'none' ? 'selected' : ''}>Sans équipe</option>${S.teams.map((t) => `<option value="${t.id}" ${PL.team === t.id ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select>
       <select id="pl" aria-label="Licence"><option value="">Toutes les licences</option>${Object.entries(LIC).map(([k, [l]]) => `<option value="${k}" ${PL.lic === k ? 'selected' : ''}>${l}</option>`).join('')}</select>

@@ -1,9 +1,9 @@
 // ClubManager — service worker (appli installable + hors connexion)
-const V = 'cm-v1';
-const SHELL = ['./', './index.html', './styles.css', './js/core.js', './js/app.js', './js/views.js', './js/views2.js',
+const V = 'cm-v2';
+const SHELL = ['./', './index.html', './styles.css', './js/core.js','./js/app.js','./js/views.js','./js/views2.js',
   './vendor/supabase.js', './manifest.webmanifest', './icons/logo.svg', './icons/icon-192.png', './icons/icon-512.png', './favicon.svg'];
 
-self.addEventListener('install', (e) => { e.waitUntil(caches.open(V).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });
+self.addEventListener('install', (e) => { e.waitUntil(caches.open(V).then((c) => c.addAll(SHELL))); });
 self.addEventListener('activate', (e) => {
   e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== V).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
 });
@@ -25,3 +25,5 @@ self.addEventListener('notificationclick', (e) => {
     return self.clients.openWindow('./' + link);
   }));
 });
+
+self.addEventListener('message', (e) => { if (e.data === 'skip') self.skipWaiting(); });

@@ -101,13 +101,18 @@ export const initials = (n) => (n || '?').split(/\s+/).map((w) => w[0]).slice(0,
 export const fullName = (p) => p ? `${p.first_name} ${p.last_name}` : '';
 
 // ---------------------------------------------------------------- interface
+export const haptic = (ms = 8) => { try { navigator.vibrate?.(ms); } catch {} };
+
 export function toast(msg, type = 'ok') {
   const t = document.createElement('div');
   t.className = `toast toast-${type}`;
-  t.textContent = msg;
+  t.setAttribute('role', type === 'err' ? 'alert' : 'status');
+  t.innerHTML = `<span class="toast-ic" aria-hidden="true">${type === 'err' ? '!' : type === 'info' ? '●' : '✓'}</span><span>${esc(msg)}</span>`;
   $('#toasts').append(t);
+  haptic(type === 'err' ? [10, 40, 10] : 8);
+  t.addEventListener('click', () => { t.classList.add('out'); setTimeout(() => t.remove(), 300); });
   setTimeout(() => t.classList.add('out'), 3200);
-  setTimeout(() => t.remove(), 3700);
+  setTimeout(() => t.remove(), 3600);
 }
 
 export function modal({ title, body, actions = [], wide = false, onOpen }) {
@@ -115,7 +120,8 @@ export function modal({ title, body, actions = [], wide = false, onOpen }) {
   const w = document.createElement('div');
   w.className = 'modal-wrap';
   w.innerHTML = `<div class="modal ${wide ? 'wide' : ''}" role="dialog" aria-modal="true" aria-label="${esc(title)}">
-    <header><h2>${esc(title)}</h2><button class="icon-btn" data-close aria-label="Fermer">✕</button></header>
+    <div class="grabber" aria-hidden="true"></div>
+    <header><h2>${esc(title)}</h2><button class="icon-btn close-x" data-close aria-label="Fermer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></header>
     <div class="modal-body">${body}</div>
     ${actions.length ? `<footer>${actions.map((a, i) => `<button class="btn ${a.cls || ''}" data-act="${i}">${esc(a.label)}</button>`).join('')}</footer>` : ''}
   </div>`;
@@ -134,27 +140,41 @@ export function modal({ title, body, actions = [], wide = false, onOpen }) {
       finally { b.disabled = false; }
     }
   });
+  // glisser vers le bas pour fermer (mobile)
+  const sheet = w.querySelector('.modal');
+  let y0 = null, dy = 0;
+  const start = (e) => { if (window.innerWidth > 600 || sheet.querySelector('.modal-body').scrollTop > 0 && !e.target.closest('header,.grabber')) return; y0 = e.touches[0].clientY; dy = 0; sheet.style.transition = 'none'; };
+  const move = (e) => { if (y0 == null) return; dy = Math.max(0, e.touches[0].clientY - y0); if (dy > 0) { sheet.style.transform = `translateY(${dy}px)`; if (e.cancelable && e.target.closest('header,.grabber')) e.preventDefault(); } };
+  const end = () => { if (y0 == null) return; sheet.style.transition = ''; if (dy > 110) closeModal(); else sheet.style.transform = ''; y0 = null; };
+  sheet.addEventListener('touchstart', start, { passive: true });
+  sheet.addEventListener('touchmove', move, { passive: false });
+  sheet.addEventListener('touchend', end);
   onOpen?.(w);
   const first = w.querySelector('input,select,textarea');
   if (first && window.innerWidth > 700) first.focus();
   return w;
 }
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.querySelector('.modal-wrap.in')) closeModal(); });
 export function closeModal() {
-  $$('.modal-wrap').forEach((m) => m.remove());
-  document.body.classList.remove('noscroll');
+  $$('.modal-wrap:not(.closing)').forEach((m) => {
+    m.classList.add('closing'); m.classList.remove('in');
+    setTimeout(() => { m.remove(); if (!$('.modal-wrap:not(.closing)')) document.body.classList.remove('noscroll'); }, 220);
+  });
 }
 
 export function confirmBox(text, { danger = true, ok = 'Confirmer' } = {}) {
   return new Promise((res) => {
-    modal({
+    let done = false; const fin = (v) => { if (!done) { done = true; res(v); } };
+    const w = modal({
       title: 'Confirmation',
       body: `<p class="lead">${esc(text)}</p>`,
       actions: [
-        { label: 'Annuler', cls: 'ghost', run: () => res(false) },
-        { label: ok, cls: danger ? 'danger' : 'primary', run: () => res(true) },
+        { label: 'Annuler', cls: 'ghost', run: () => fin(false) },
+        { label: ok, cls: danger ? 'danger' : 'primary', run: () => fin(true) },
       ],
     });
-    $('.modal-wrap').addEventListener('click', (e) => { if (e.target.classList.contains('modal-wrap') || e.target.closest('[data-close]')) res(false); });
+    w.addEventListener('click', (e) => { if (e.target === w || e.target.closest('[data-close]')) fin(false); });
+    new MutationObserver((_, o) => { if (!w.isConnected) { fin(false); o.disconnect(); } }).observe(document.body, { childList: true });
   });
 }
 
@@ -220,8 +240,9 @@ export async function q(promise) {
 export const empty = (emoji, title, text = '', btn = '') =>
   `<div class="empty"><div class="empty-emoji">${emoji}</div><h3>${esc(title)}</h3>${text ? `<p>${esc(text)}</p>` : ''}${btn}</div>`;
 
+const hue = (n) => [...(n || '?')].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
 export const avatar = (name, url, size = '') =>
-  url ? `<img class="avatar ${size}" src="${esc(url)}" alt="">` : `<span class="avatar ${size}" aria-hidden="true">${esc(initials(name))}</span>`;
+  url ? `<img class="avatar ${size}" src="${esc(url)}" alt="">` : `<span class="avatar ${size}" style="--h:${hue(name)}" aria-hidden="true">${esc(initials(name))}</span>`;
 
 export const badge = (text, tone = '') => `<span class="badge ${tone}">${esc(text)}</span>`;
 
