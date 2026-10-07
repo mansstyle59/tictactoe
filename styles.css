@@ -542,3 +542,31 @@ body[data-depth=detail] .large-title-wrap { display: none; }
 .pub-row .act-date { --k: var(--brand); }
 .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; } .gallery img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 14px; }
 .pub-foot { text-align: center; color: var(--muted); padding: 20px 16px 40px; } .pub-foot a { color: var(--brand); font-weight: 600; }
+
+/* inscriptions des clubs */
+.auth-club { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; padding-top: 12px; border-top: .5px solid var(--sep); color: var(--muted); font-size: .92rem; }
+.app-card .card-head { align-items: flex-start; }
+.app-card h3 { font-size: 1.15rem; margin-bottom: 2px; }
+.app-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px 16px; padding: 12px; background: var(--fill); border-radius: 14px; }
+.app-grid small, .app-grid b, .app-grid a { display: block; } .app-grid b, .app-grid a { font-weight: 600; overflow-wrap: anywhere; }
+.app-msg { margin: 12px 0 0; padding: 10px 12px; border-left: 3px solid var(--brand); color: var(--ink-2); background: color-mix(in srgb, var(--brand) 5%, transparent); border-radius: 0 10px 10px 0; }
+
+/* familles */
+.fam-row { cursor: pointer; border-radius: 12px; }
+.fam-row:active { background: var(--fill); }
+.fam-row .chips { margin: 6px 0 0; }
+.chip.kid { background: color-mix(in srgb, var(--brand) 10%, var(--card)); color: var(--brand); }
+.kid-pick { display: flex; flex-direction: column; max-height: 280px; overflow-y: auto; margin-top: 8px; background: var(--fill); border-radius: 14px; padding: 4px; }
+.kid-opt { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; cursor: pointer; }
+.kid-opt:has(input:checked) { background: var(--card); }
+.kid-opt b, .kid-opt small { display: block; } .kid-opt small { color: var(--muted); }
+
+/* ---------- WhatsApp ---------- */
+.btn.wa { background: #25D366; color: #fff; border-color: transparent; display: inline-flex; align-items: center; gap: 6px; }
+.btn.wa:hover { background: #1ebe5b; }
+.link-card { border: 1.5px dashed var(--accent, #4F46E5); }
+.req-card { border-left: 4px solid #F59E0B; }
+.drop { display: block; border: 1.5px dashed var(--line, #ccc); border-radius: 14px; padding: 18px; text-align: center; cursor: pointer; margin: 8px 0; }
+.drop input { display: none; }
+.or { text-align: center; margin: 10px 0; color: var(--muted, #888); font-size: 13px; }
+.invite-box .pre { white-space: pre-wrap; background: var(--bg2, rgba(0,0,0,.04)); padding: 10px; border-radius: 10px; }

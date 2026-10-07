@@ -2,6 +2,7 @@
 import { sb, S, role, SPORTS, esc, $, $$, toast, modal, closeModal, formHTML, readForm, errMsg, q, applyBrand, avatar, fmt, ROLE_LABEL, haptic } from './core.js';
 import * as V from './views.js';
 import * as V2 from './views2.js';
+import * as V3 from './views3.js';
 
 // ---------------------------------------------------------------- navigation
 const NAV = [
@@ -10,6 +11,7 @@ const NAV = [
   { r: 'activites', icon: 'whistle', label: 'Entraînements & matchs', short: 'Activités', who: 'all' },
   { r: 'equipes', icon: 'team', label: 'Équipes', who: 'admin,coach' },
   { r: 'joueurs', icon: 'user', label: 'Joueurs', who: 'admin,coach' },
+  { r: 'familles', icon: 'family', label: 'Familles', who: 'admin,coach' },
   { r: 'evenements', icon: 'star', label: 'Événements', who: 'all' },
   { r: 'organisation', icon: 'check', label: 'Organisation', who: 'admin,coach,volunteer' },
   { r: 'benevoles', icon: 'hand', label: 'Bénévoles', who: 'all' },
@@ -36,6 +38,7 @@ const ICONS = {
   more: '<circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/>',
   shield: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',
   bell: '<path d="M6 16V11a6 6 0 1 1 12 0v5l2 2H4zM10 21h4"/>',
+  family: '<circle cx="7" cy="6" r="2.6"/><circle cx="17" cy="6" r="2.6"/><circle cx="12" cy="13" r="2"/><path d="M3 20v-5a4 4 0 0 1 8 0M13 20v-5a4 4 0 0 1 8 0M9.5 21v-2a2.5 2.5 0 0 1 5 0v2"/>',
   swap: '<path d="M7 7h12l-3-3M17 17H5l3 3"/>',
 };
 export const icon = (n) => `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n] || ''}</svg>`;
@@ -45,7 +48,7 @@ const navFor = () => NAV.filter((n) => n.who === 'all' || n.who.split(',').some(
 const ROUTES = [
   [/^$/, V.dashboard], [/^calendrier$/, V.calendar], [/^activites$/, V.activities],
   [/^activite\/(.+)$/, V.activityDetail], [/^equipes$/, V.teams], [/^equipe\/(.+)$/, V.teamDetail],
-  [/^joueurs$/, V.players], [/^evenements$/, V2.events], [/^organisation$/, V2.tasks],
+  [/^joueurs$/, V.players], [/^familles$/, V3.families], [/^evenements$/, V2.events], [/^organisation$/, V2.tasks],
   [/^benevoles$/, V2.volunteers], [/^messages$/, V2.messages], [/^documents$/, V2.documents],
   [/^cotisations$/, V2.dues], [/^stats$/, V2.stats], [/^club$/, V2.clubSettings],
   [/^profil$/, V2.profile], [/^admin$/, V2.superAdmin],
@@ -109,6 +112,7 @@ async function afterLogin(session) {
   } catch { S.profile = { id: S.user.id, email: S.user.email, full_name: S.user.email }; }
   const settings = await q(sb.from('platform_settings').select('*')).catch(() => []);
   S.plans = settings.find((s) => s.key === 'plans')?.value || null;
+  S.needApproval = settings.find((s) => s.key === 'clubs_need_approval')?.value === true || settings.find((s) => s.key === 'signups_open')?.value === false;
 
   const code = localStorage.getItem('cm_invite');
   if (code) {
@@ -120,7 +124,10 @@ async function afterLogin(session) {
     } catch (e) { toast(errMsg(e), 'err'); }
   }
   await loadMemberships();
-  if (!S.clubs.length) return S.profile?.is_super_admin && location.hash === '#/admin' ? shell() : onboarding();
+  if (!S.clubs.length) {
+    if (S.profile?.is_super_admin) { location.hash = '#/admin'; return shell(); }
+    return noClubYet();
+  }
   const saved = localStorage.getItem('cm_club');
   await selectClub(S.clubs.find((c) => c.id === saved)?.id || S.clubs[0].id);
 }
@@ -224,8 +231,10 @@ function renderAuth(mode = 'login') {
         <button class="${mode === 'signup' ? 'on' : ''}" data-mode="signup">Créer un compte</button>
       </div>
       <div id="authForm"></div>
+      <div class="auth-club"><span>Responsable d'un club ?</span><button class="link" id="applyClub">Inscrire mon club</button></div>
     </section></div>`;
   $$('[data-mode]').forEach((b) => (b.onclick = () => renderAuth(b.dataset.mode)));
+  $('#applyClub').onclick = publicClubApplication;
   const f = $('#authForm');
   if (mode === 'login') {
     f.innerHTML = formHTML([
@@ -286,6 +295,70 @@ function newPasswordScreen() {
       const { data } = await sb.auth.getSession();
       if (data.session) afterLogin(data.session);
     } }] });
+}
+
+// ---------------------------------------------------------------- inscription d'un club (validée par l'administrateur)
+const SPORT_OPTS = () => Object.entries(SPORTS).map(([k, s]) => [k, `${s.emoji} ${s.label}`]);
+const APP_FIELDS = (withContact) => [
+  { name: 'club_name', label: 'Nom du club', required: true, placeholder: 'Ex. : Les Aigles Basket' },
+  { name: 'city', label: 'Ville', col: 2, placeholder: 'Ex. : Narbonne' },
+  { name: 'sport', label: 'Sport', type: 'select', options: SPORT_OPTS(), value: 'basket', col: 2 },
+  ...(withContact ? [{ name: 'contact_name', label: 'Ton prénom et nom', required: true, col: 2 }, { name: 'email', label: 'Ton email', type: 'email', required: true, col: 2 }] : []),
+  { name: 'phone', label: 'Téléphone', type: 'tel', col: 2 },
+  { name: 'players', label: 'Nombre de licenciés (environ)', type: 'number', min: 0, col: 2 },
+  { name: 'message', label: 'Un mot pour nous (facultatif)', type: 'textarea', rows: 3, placeholder: 'Ta fonction au club, tes besoins…' },
+];
+async function sendApplication(v) {
+  return q(sb.rpc('submit_club_application', { p_club_name: v.club_name, p_city: v.city || '', p_sport: v.sport || 'basket',
+    p_contact_name: v.contact_name, p_email: v.email, p_phone: v.phone || '', p_players: v.players ?? null, p_message: v.message || '' }));
+}
+// Formulaire public (sans compte), depuis l'écran de connexion
+function publicClubApplicationFor() {
+  modal({ title: 'Inscrire un autre club', wide: true, body: formHTML(APP_FIELDS(false)),
+    actions: [{ label: 'Annuler', cls: 'ghost' }, { label: 'Envoyer la demande', cls: 'primary', run: async (w) => {
+      await sendApplication({ ...readForm(w), contact_name: S.profile.full_name, email: S.profile.email || S.user.email }); toast('Demande envoyée, en attente de validation');
+    } }] });
+}
+export function publicClubApplication() {
+  modal({ title: 'Inscrire mon club', wide: true, body: `<p class="lead">Envoie ta demande : l'équipe ClubManager la valide et t'envoie le lien pour activer l'espace de ton club.</p>` + formHTML(APP_FIELDS(true)),
+    actions: [{ label: 'Annuler', cls: 'ghost' }, { label: 'Envoyer la demande', cls: 'primary', run: async (w) => {
+      await sendApplication(readForm(w));
+      modal({ title: 'Demande envoyée', body: `<div class="empty"><div class="empty-emoji">📨</div><h3>Merci !</h3><p>Ta demande est en cours de validation. Tu recevras le lien d'activation de ton club par email ou par message.</p></div>`,
+        actions: [{ label: 'Fermer', cls: 'primary' }] });
+      return false;
+    } }] });
+}
+
+async function noClubYet() {
+  applyBrand(null);
+  const apps = await q(sb.from('club_applications').select('*').eq('user_id', S.user.id).order('created_at', { ascending: false }).limit(1)).catch(() => []);
+  const a = apps[0];
+  if (!S.needApproval && !(a && a.status === 'pending')) return onboarding();
+  const frame = (inner) => {
+    $('#app').innerHTML = `<div class="center-screen"><div class="card wizard">
+      <div class="wiz-top"><div class="auth-brand small"><img src="icons/logo.svg" alt="" width="36" height="36"><span>Club<b>Manager</b></span></div>
+        <button class="link" id="lo">Déconnexion</button></div>${inner}</div></div>`;
+    $('#lo').onclick = () => sb.auth.signOut();
+    $('#haveCode') && ($('#haveCode').onclick = joinWithCode);
+  };
+  if (a && a.status === 'pending') {
+    frame(`<div class="empty"><div class="empty-emoji">⏳</div><h3>Demande en cours de validation</h3>
+      <p>La demande pour <b>${esc(a.club_name)}</b> a bien été reçue le ${fmt.date(a.created_at)}. Dès qu'elle est validée, l'espace de ton club s'ouvrira ici automatiquement.</p>
+      <button class="btn ghost" id="refresh">Vérifier maintenant</button></div>
+      <div class="or"><span>ou</span></div><button class="btn ghost block" id="haveCode">🎟️ J'ai un code d'invitation</button>`);
+    $('#refresh').onclick = () => afterLogin(S.session);
+    return;
+  }
+  frame(`${a && a.status === 'rejected' ? `<div class="notice">Ta demande pour <b>${esc(a.club_name)}</b> n'a pas été acceptée${a.reject_reason ? ` : ${esc(a.reject_reason)}` : ''}. Tu peux en envoyer une nouvelle.</div>` : ''}
+    <h2>Inscrire mon club</h2><p class="muted">Chaque nouveau club est validé par l'équipe ClubManager. Remplis ces informations, on active ton espace rapidement.</p>
+    <div id="appForm">${formHTML(APP_FIELDS(false))}</div>
+    <div class="wiz-actions"><span></span><button class="btn primary" id="sendApp">Envoyer ma demande</button></div>
+    <div class="or"><span>ou</span></div><button class="btn ghost block" id="haveCode">🎟️ Mon club existe déjà : j'ai un code d'invitation</button>`);
+  $('#sendApp').onclick = async () => {
+    const b = $('#sendApp'); b.disabled = true;
+    try { await sendApplication({ ...readForm($('#appForm')), contact_name: S.profile.full_name, email: S.profile.email || S.user.email }); toast('Demande envoyée'); noClubYet(); }
+    catch (e) { toast(errMsg(e), 'err'); b.disabled = false; }
+  };
 }
 
 // ---------------------------------------------------------------- assistant de création
@@ -450,7 +523,7 @@ function switchClub() {
       <div class="row gap wrap mt"><button class="btn ghost" id="newClub">＋ Créer un autre club</button><button class="btn ghost" id="joinClub">🎟️ Rejoindre avec un code</button></div>`,
   onOpen: (w) => {
     $$('[data-club]', w).forEach((b) => (b.onclick = async () => { closeModal(); location.hash = '#/'; await selectClub(b.dataset.club); }));
-    $('#newClub', w).onclick = () => { closeModal(); onboarding(); };
+    $('#newClub', w).onclick = () => { closeModal(); if (S.needApproval && !role.sa()) publicClubApplicationFor(); else onboarding(); };
     $('#joinClub', w).onclick = joinWithCode;
   } });
 }
@@ -464,6 +537,7 @@ export async function route(silent = false) {
   let fn, params = [];
   for (const [re, f] of ROUTES) { const m = path.match(re); if (m) { fn = f; params = m.slice(1); break; } }
   if (!fn) { location.hash = '#/'; return; }
+  if (!S.club && !['admin', 'profil'].includes(path)) { location.hash = '#/admin'; return; }
   const top = path.split('/')[0];
   document.body.dataset.depth = path.includes('/') ? 'detail' : 'root';
   $$('[data-r]').forEach((a) => a.classList.toggle('on', a.dataset.r === top || (top === 'activite' && a.dataset.r === 'activites') || (top === 'equipe' && a.dataset.r === 'equipes')));
@@ -494,7 +568,7 @@ function watchRealtime() {
           .catch(() => new Notification(n.title, { body: n.body || '' }));
       }
     })
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `club_id=eq.${S.club.id}` }, () => refreshCounters())
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `club_id=eq.${S.club?.id}` }, () => refreshCounters())
     .subscribe();
 }
 

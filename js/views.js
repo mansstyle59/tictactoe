@@ -1,7 +1,8 @@
 // ClubManager — tableau de bord, calendrier, activités, équipes, joueurs
-import { sb, S, role, sport, SPORTS, KINDS, kindEmoji, esc, $, $$, fmt, toast, modal, closeModal, confirmBox, formHTML, readForm,
+import { waLink, appUrl, sb, S, role, sport, SPORTS, KINDS, kindEmoji, esc, $, $$, fmt, toast, modal, closeModal, confirmBox, formHTML, readForm,
   errMsg, q, empty, avatar, badge, fullName, toLocalInput, fromLocalInput, planLimit, uid, haptic } from './core.js';
 import { icon, memberName, refreshClubData, setTitle, refreshCounters, installApp, isStandalone } from './app.js';
+import { playerFamilyBlock, contactForm, myChildrenBlock, parentLinkCard, linkChildForm, WA_ICON } from './views3.js';
 
 export const logoBlock = () => '<div class="auth-brand"><img src="icons/logo.svg" alt="" width="48" height="48"><span>Club<b>Manager</b></span></div>';
 
@@ -80,6 +81,8 @@ export async function dashboard(el) {
     if (role.admin()) parts.push(await checklist(players));
   }
 
+  if (fam) parts.push(await myChildrenBlock().catch(() => ''));
+  if (S.roles.includes('parent') && !(await myPlayerIds()).length) parts.push(await parentLinkCard());
   if (fam) {
     const mine = await myPlayerIds();
     if (mine.length) {
@@ -122,11 +125,13 @@ export async function dashboard(el) {
   </div>`);
 
   el.innerHTML = parts.join('');
+  $('#linkChild', el) && ($('#linkChild', el).onclick = () => linkChildForm(() => dashboard(el)));
   bindConvButtons(el, () => dashboard(el));
   if (!isStandalone() && !localStorage.getItem('cm_noinstall')) el.insertAdjacentHTML('beforeend', `<div class="install-card"><img src="icons/icon-192.png" alt="" width="48" height="48"><div><b>Installe ClubManager</b><small>Ajoute l'appli à ton écran d'accueil pour l'ouvrir en une touche.</small></div><button class="btn sm white" id="installBtn">Installer</button><button class="icon-btn" id="noInstall" aria-label="Masquer">✕</button></div>`);
   $('#installBtn', el) && ($('#installBtn', el).onclick = installApp);
   $('#noInstall', el) && ($('#noInstall', el).onclick = () => { localStorage.setItem('cm_noinstall', '1'); $('.install-card', el).remove(); });
   $$('.hero[data-href]', el).forEach((h) => { const go = (e) => { if (!e.target.closest('button')) location.hash = h.dataset.href; }; h.onclick = go; h.onkeydown = (e) => { if (e.key === 'Enter') go(e); }; });
+  $$('[data-mykid]', el).forEach((b) => (b.onclick = async () => { const pl = await q(sb.from('players').select('*').eq('id', b.dataset.mykid).single()); playerSheet(pl); }));
   $('#heroAdd', el) && ($('#heroAdd', el).onclick = () => S.teams.length ? activityForm({ kind: 'match', team_id: S.teams.length === 1 ? S.teams[0].id : '' }, () => dashboard(el)) : (location.hash = '#/equipes'));
   $('#quickAdd', el) && ($('#quickAdd', el).onclick = quickAdd);
   $$('[data-check]', el).forEach((b) => (b.onclick = () => (location.hash = b.dataset.check)));
@@ -458,7 +463,7 @@ export async function activityDetail(el, id) {
     ${a.price ? `<p class="meta">💶 ${fmt.money(a.price)}${a.organizer ? ' · Organisé par ' + esc(a.organizer) : ''}</p>` : a.organizer ? `<p class="meta">👤 ${esc(a.organizer)}</p>` : ''}
     ${a.description ? `<p class="pre">${esc(a.description)}</p>` : ''}</div>
     ${staff ? `<div class="row gap wrap"><button class="btn ghost sm" id="edit">✏️ Modifier</button><button class="btn ghost sm" id="dup">⧉ Dupliquer</button>
-      ${a.team_id ? '<button class="btn ghost sm" id="remind">📣 Relancer</button>' : ''}<button class="btn ghost sm danger-text" id="del">🗑 Supprimer</button></div>` : ''}
+      ${a.team_id ? '<button class="btn ghost sm" id="remind">📣 Relancer</button>' : ''}<button class="btn wa sm" id="waShare">${WA_ICON} WhatsApp</button><button class="btn ghost sm danger-text" id="del">🗑 Supprimer</button></div>` : ''}
   </div>`;
 
   // résultat de match
@@ -532,6 +537,12 @@ export async function activityDetail(el, id) {
       if (!(await confirmBox(`Supprimer « ${a.title} » ? Les convocations et réponses associées seront supprimées.`, { ok: 'Supprimer' }))) return;
       try { await q(sb.from('activities').delete().eq('id', id)); toast('Supprimé'); history.back(); } catch (e) { toast(errMsg(e), 'err'); }
     };
+    $('#waShare', el) && ($('#waShare', el).onclick = () => {
+      const lines = [`${kindEmoji(a)} ${a.kind === 'match' && a.opponent ? `${teamName(a.team_id) || ''} ${a.is_home === false ? '@' : 'vs'} ${a.opponent}` : a.title}`,
+        `🕒 ${fmt.dayLong(a.starts_at)} à ${fmt.time(a.starts_at)}`, a.meet_at ? `⏰ RDV ${fmt.time(a.meet_at)}` : '', a.location ? `📍 ${[a.location, a.address].filter(Boolean).join(', ')}` : '',
+        isTeamAct ? '\n✅ Merci d’indiquer ta présence dans l’appli :' : '\n👉 Détails :', appUrl(`#/activite/${a.id}`)];
+      window.open(waLink(lines.filter(Boolean).join('\n')), '_blank', 'noopener');
+    });
     $('#remind', el) && ($('#remind', el).onclick = async () => {
       const pend = att.filter((x) => x.response === 'pending').length;
       try {
@@ -762,7 +773,13 @@ export function playerForm(p = {}, after) {
       if (p.id) await q(sb.from('players').update(v).eq('id', p.id));
       else {
         if ((await loadPlayers()).length >= planLimit('players')) throw new Error(`Ton offre permet ${planLimit('players')} joueurs.`);
-        await q(sb.from('players').insert({ ...v, club_id: S.club.id }));
+        const np = await q(sb.from('players').insert({ ...v, club_id: S.club.id }).select('id').single());
+        if (v.guardian_name) {
+          const [first, ...rest] = v.guardian_name.trim().split(/\s+/);
+          const fc = await q(sb.from('family_contacts').insert({ club_id: S.club.id, first_name: first, last_name: rest.join(' ') || v.last_name,
+            phone: v.guardian_phone, email: v.guardian_email, relation: 'Parent', emergency: true }).select('id').single()).catch(() => null);
+          if (fc) await sb.from('family_links').insert({ contact_id: fc.id, player_id: np.id, club_id: S.club.id });
+        }
       }
       S.cache.players = null; toast('Joueur enregistré'); after?.();
     } }] });
@@ -782,7 +799,8 @@ export async function playerSheet(p, after) {
   const acts = await q(sb.from('activities').select('stats').eq('club_id', S.club.id).eq('kind', 'match').not('score_for', 'is', null));
   let gp = 0; acts.forEach((a) => { const s = a.stats?.[p.id]; if (s) { gp++; Object.entries(s).forEach(([k, v]) => (totals[k] = (totals[k] || 0) + v)); } });
   const due = dues[0];
-  modal({ title: fullName(p), wide: true, body: `<div class="player-head">${avatar(fullName(p), p.photo_url, 'xl')}<div>
+  const famBlock = await playerFamilyBlock(p).catch(() => '');
+  modal({ title: fullName(p), wide: true, onOpen: (w) => { $('[data-addparent]', w) && ($('[data-addparent]', w).onclick = () => contactForm({}, [p.id], () => playerSheet(p, after))); }, body: `<div class="player-head">${avatar(fullName(p), p.photo_url, 'xl')}<div>
       <p>${p.jersey ? `<span class="jersey big">${esc(p.jersey)}</span>` : ''}${badge(teamName(p.team_id) || 'Sans équipe')} ${p.position ? badge(p.position) : ''}</p>
       <p class="muted">${p.birth_date ? `${fmt.date(p.birth_date)} (${fmt.age(p.birth_date)} ans)` : ''}${p.height_cm ? ' · ' + p.height_cm + ' cm' : ''}</p>
       <p class="muted">Licence ${esc(p.license_no || '—')} · ${{ valide: '✅ valide', en_attente: '⏳ en attente', expiree: '⚠️ expirée' }[p.license_status]}</p></div></div>
@@ -792,6 +810,7 @@ export async function playerSheet(p, after) {
     <div class="grid2"><div><h4>📇 Coordonnées</h4><p>${p.phone ? `📞 <a href="tel:${esc(p.phone)}">${esc(p.phone)}</a><br>` : ''}${p.email ? `✉️ <a href="mailto:${esc(p.email)}">${esc(p.email)}</a>` : ''}${!p.phone && !p.email ? '<span class="muted">—</span>' : ''}</p>
       ${p.guardian_name || p.guardian_phone ? `<h4>👨‍👩‍👧 Responsable légal</h4><p>${esc(p.guardian_name || '')}${p.guardian_phone ? ` · <a href="tel:${esc(p.guardian_phone)}">${esc(p.guardian_phone)}</a>` : ''}${p.guardian_email ? `<br>${esc(p.guardian_email)}` : ''}</p>` : ''}
       ${role.staff() ? `<p class="muted small">${guardians.length ? `✅ ${guardians.length} parent(s) relié(s) dans l'appli` : 'Aucun parent relié dans l’appli'}${p.user_id ? ' · Compte joueur relié' : ''}</p>` : ''}
+      ${famBlock}
       ${p.notes && role.staff() ? `<h4>📝 Notes</h4><p class="pre">${esc(p.notes)}</p>` : ''}</div>
       <div><h4>🕒 Historique récent</h4>${att.filter((x) => x.activities).sort((a, b) => new Date(b.activities.starts_at) - new Date(a.activities.starts_at)).slice(0, 8).map((x) =>
         `<div class="hist"><span>${fmt.date(x.activities.starts_at)}</span><span class="grow">${esc(x.activities.kind === 'match' && x.activities.opponent ? 'vs ' + x.activities.opponent : x.activities.title)}</span>${badge(PRES[x.status][0], PRES[x.status][1])}</div>`).join('') || '<p class="muted">—</p>'}

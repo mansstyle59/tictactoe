@@ -2,6 +2,7 @@
 import { sb, S, role, sport, SPORTS, KINDS, kindEmoji, esc, $, $$, fmt, toast, modal, closeModal, confirmBox, formHTML, readForm,
   errMsg, q, empty, avatar, badge, fullName, toLocalInput, fromLocalInput, upload, applyBrand, ROLE_LABEL, isPremium, downloadCSV, planLimit } from './core.js';
 import { memberName, refreshClubData, setTitle, refreshCounters, loadMemberships, selectClub, installApp, isStandalone, joinWithCode } from './app.js';
+import { groupInvite } from './views3.js';
 import { actRow, activityForm, loadPlayers, myPlayerIds, inviteDialog, loadActivities } from './views.js';
 
 const startOfDay = (d = new Date()) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
@@ -386,7 +387,7 @@ export async function clubSettings(el) {
       <div class="invite-box"><small>Page publique</small><input readonly value="${esc(publicUrl)}" aria-label="Lien de la page publique"><div class="row gap"><button class="btn sm ghost" id="cpPub">📋 Copier</button><a class="btn sm ghost" href="#/club/${c.slug}" target="_blank">Voir la page</a></div></div>
       <div class="row end mt"><button class="btn primary" id="saveClub">Enregistrer</button></div></div>`;
   } else if (CT.tab === 'membres') {
-    body = `<div class="toolbar"><p class="muted">${S.members.length} membre(s) avec un compte</p><button class="btn primary" id="invM">🔗 Inviter</button></div>
+    body = `<div class="toolbar"><p class="muted">${S.members.length} membre(s) avec un compte</p><div class="row gap wrap"><button class="btn wa" id="waM">WhatsApp</button><button class="btn primary" id="invM">🔗 Inviter</button></div></div>
       <div class="card">${S.members.map((m) => `<div class="member">${avatar(m.full_name)}<div class="grow"><b>${esc(m.full_name)}</b><small>${esc(m.email || '')}</small>
         <div class="chips">${['admin', 'coach', 'player', 'parent', 'volunteer'].map((r) => `<button class="chip sm ${m.roles.includes(r) ? 'on' : ''}" data-tog="${r}" data-u="${m.id}">${ROLE_LABEL[r]}</button>`).join('')}</div></div>
         ${m.id !== S.user.id ? `<button class="icon-btn" data-kick="${m.id}" aria-label="Retirer du club">✕</button>` : ''}</div>`).join('')}</div>
@@ -439,6 +440,7 @@ export async function clubSettings(el) {
     };
   }
   if (CT.tab === 'membres') {
+    $('#waM', el).onclick = () => groupInvite('parent');
     $('#invM', el).onclick = () => inviteDialog({ roles: ['coach', 'volunteer', 'parent', 'player', 'admin'] });
     $$('[data-tog]', el).forEach((b) => (b.onclick = async () => {
       const u = b.dataset.u, r = b.dataset.tog, has = b.classList.contains('on');
@@ -507,19 +509,67 @@ export async function profile(el) {
 }
 
 // ---------------------------------------------------------------- super admin
-const SA = { tab: 'clubs' };
+const SA = { tab: 'apps', appFilter: 'pending' };
+const PLAN_OPTS = [['gratuit', 'Gratuit'], ['standard', 'Standard'], ['premium', 'Premium']];
+
+// Lien d'activation à transmettre au responsable du club
+function activationBox(code, clubName, contact = '') {
+  const link = `${location.origin}${location.pathname}#/rejoindre/${code}`;
+  const msg = `Bonjour${contact ? ' ' + contact : ''} ! L'espace de ${clubName} sur ClubManager est prêt. Crée ton compte administrateur ici : ${link}`;
+  return { link, msg, html: `<div class="invite-box"><small>Lien d'activation (administrateur du club, valable 30 jours)</small><b class="code">${esc(code)}</b>
+    <input readonly value="${esc(link)}" aria-label="Lien d'activation">
+    <div class="row gap wrap"><button class="btn sm primary" data-copy>📋 Copier le message</button>
+    <a class="btn sm ghost" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(msg)}">WhatsApp</a>
+    <a class="btn sm ghost" href="sms:?&body=${encodeURIComponent(msg)}">SMS</a></div></div>` };
+}
+function showActivation(title, code, clubName, contact, email) {
+  const box = activationBox(code, clubName, contact);
+  modal({ title, body: `<p class="lead">Le club <b>${esc(clubName)}</b> est créé. Envoie ce lien au responsable${contact ? ` (${esc(contact)})` : ''} : en créant son compte avec, il devient administrateur du club.</p>${box.html}
+    ${email ? `<p class="mt"><a class="btn sm ghost" href="mailto:${esc(email)}?subject=${encodeURIComponent('Votre espace ClubManager est prêt')}&body=${encodeURIComponent(box.msg)}">✉️ Envoyer par email à ${esc(email)}</a></p>` : ''}`,
+    actions: [{ label: 'Terminé', cls: 'primary' }],
+    onOpen: (w) => { $('[data-copy]', w).onclick = () => navigator.clipboard.writeText(box.msg).then(() => toast('Message copié')); } });
+}
+
 export async function superAdmin(el) {
   if (!role.sa()) { location.hash = '#/'; return; }
   setTitle('Super Admin');
-  const o = await q(sb.rpc('platform_overview'));
-  const settings = await q(sb.from('platform_settings').select('*'));
-  const tabs = [['clubs', 'Clubs'], ['users', 'Utilisateurs'], ['reports', `Signalements (${o.reports.filter((r) => r.status === 'open').length})`], ['log', 'Activité'], ['settings', 'Paramètres']];
+  const [o, settings, apps] = await Promise.all([
+    q(sb.rpc('platform_overview')),
+    q(sb.from('platform_settings').select('*')),
+    q(sb.from('club_applications').select('*').order('created_at', { ascending: false }).limit(300)),
+  ]);
+  const pending = apps.filter((x) => x.status === 'pending');
+  const needApproval = settings.find((x) => x.key === 'clubs_need_approval')?.value === true;
+  const tabs = [['apps', `Inscriptions${pending.length ? ` (${pending.length})` : ''}`], ['clubs', `Clubs (${o.clubs})`], ['users', 'Utilisateurs'],
+    ['reports', `Signalements (${o.reports.filter((r) => r.status === 'open').length})`], ['log', 'Activité'], ['settings', 'Paramètres']];
   let body = '';
-  if (SA.tab === 'clubs') body = `<div class="card table-card"><div class="table-wrap"><table class="table"><thead><tr><th>Club</th><th>Sport</th><th>Membres</th><th>Joueurs</th><th>Offre</th><th>Statut</th><th></th></tr></thead>
-    <tbody>${o.club_list.map((c) => `<tr><td><b>${esc(c.name)}</b><br><small class="muted">${esc(c.city || '')} · créé ${fmt.date(c.created_at)} · <a href="#/club/${c.slug}" target="_blank">page</a></small></td><td>${SPORTS[c.sport]?.emoji || ''}</td><td>${c.members}</td><td>${c.players}</td>
-      <td><select data-plan="${c.id}" aria-label="Offre">${['gratuit', 'standard', 'premium'].map((p) => `<option ${c.plan === p ? 'selected' : ''}>${p}</option>`).join('')}</select></td>
+  if (SA.tab === 'apps') {
+    const list = apps.filter((x) => SA.appFilter === 'all' || x.status === SA.appFilter);
+    const ST = { pending: ['En attente', 'warn'], approved: ['Validé', 'ok'], rejected: ['Refusé', 'bad'] };
+    body = `<div class="toolbar"><div class="seg">${[['pending', `En attente (${pending.length})`], ['approved', 'Validés'], ['rejected', 'Refusés'], ['all', 'Tous']].map(([k, l]) => `<button class="${SA.appFilter === k ? 'on' : ''}" data-af="${k}">${l}</button>`).join('')}</div>
+      <button class="btn primary" id="newClubSA">＋ Créer un club</button></div>
+      <div class="notice small">${needApproval ? '🔒 Les nouveaux clubs doivent être validés par toi avant d’être créés.' : '🔓 Les clubs peuvent se créer librement (sans validation).'} <button class="link" id="toggleAppr">${needApproval ? 'Ouvrir les inscriptions libres' : 'Exiger ma validation'}</button></div>
+      ${list.length ? list.map((x) => `<article class="card app-card">
+        <div class="card-head"><div><h3>${SPORTS[x.sport]?.emoji || '🏅'} ${esc(x.club_name)}</h3><small class="muted">${esc(x.city || 'Ville non précisée')} · demandé ${fmt.rel(x.created_at)}</small></div>${badge(ST[x.status][0], ST[x.status][1])}</div>
+        <div class="app-grid"><div><small class="muted">Responsable</small><b>${esc(x.contact_name)}</b></div>
+          <div><small class="muted">Email</small><a href="mailto:${esc(x.email)}">${esc(x.email)}</a></div>
+          ${x.phone ? `<div><small class="muted">Téléphone</small><a href="tel:${esc(x.phone)}">${esc(x.phone)}</a></div>` : ''}
+          ${x.players_estimate != null ? `<div><small class="muted">Licenciés</small><b>≈ ${x.players_estimate}</b></div>` : ''}
+          <div><small class="muted">Compte</small><b>${x.user_id ? 'Déjà créé' : 'Pas encore'}</b></div></div>
+        ${x.message ? `<p class="pre app-msg">${esc(x.message)}</p>` : ''}
+        ${x.status === 'pending' ? `<div class="row gap wrap mt"><select data-aplan="${x.id}" aria-label="Offre" style="width:auto">${PLAN_OPTS.map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}</select>
+          <button class="btn primary" data-approve="${x.id}">✓ Valider et créer le club</button><button class="btn ghost danger-text" data-reject="${x.id}">Refuser</button></div>`
+        : x.status === 'approved' ? `<div class="row gap wrap mt"><small class="muted grow">Validé ${fmt.rel(x.decided_at)} · offre ${esc(x.plan || 'gratuit')}${x.user_id ? ' · le responsable a déjà accès' : ''}</small>
+          ${x.invite_code ? `<button class="btn sm ghost" data-relink="${x.id}">🔗 Lien d'activation</button>` : ''}${x.club_id ? `<button class="btn sm primary" data-manage="${x.club_id}">Gérer le club</button>` : ''}</div>`
+        : `<p class="muted small mt">Refusé ${fmt.rel(x.decided_at)}${x.reject_reason ? ` : ${esc(x.reject_reason)}` : ''}</p>`}
+      </article>`).join('') : empty('📭', SA.appFilter === 'pending' ? 'Aucune demande en attente' : 'Rien ici', 'Les clubs envoient leur demande depuis l’écran de connexion (« Inscrire mon club »).')}`;
+  } else if (SA.tab === 'clubs') body = `<div class="toolbar"><p class="muted">${o.clubs} club(s), ${o.active_clubs} actif(s)</p><button class="btn primary" id="newClubSA">＋ Créer un club</button></div>
+    ${o.club_list.length ? `<div class="card table-card"><div class="table-wrap"><table class="table"><thead><tr><th>Club</th><th>Membres</th><th>Joueurs</th><th>Offre</th><th>Statut</th><th></th></tr></thead>
+    <tbody>${o.club_list.map((c) => `<tr><td><b>${SPORTS[c.sport]?.emoji || ''} ${esc(c.name)}</b><br><small class="muted">${esc(c.city || '')} · créé ${fmt.date(c.created_at)} · <a href="#/club/${c.slug}" target="_blank">page publique</a></small></td><td>${c.members}</td><td>${c.players}</td>
+      <td><select data-plan="${c.id}" aria-label="Offre" style="width:auto">${PLAN_OPTS.map(([p, l]) => `<option value="${p}" ${c.plan === p ? 'selected' : ''}>${l}</option>`).join('')}</select></td>
       <td><button class="btn sm ${c.status === 'active' ? 'ghost' : 'danger'}" data-sus="${c.id}" data-st="${c.status}">${c.status === 'active' ? '🟢 Actif' : '⛔ Suspendu'}</button></td>
-      <td><button class="btn sm primary" data-manage="${c.id}">Gérer</button></td></tr>`).join('')}</tbody></table></div></div>`;
+      <td><div class="row gap"><button class="btn sm primary" data-manage="${c.id}">Gérer</button><button class="btn sm ghost" data-invadm="${c.id}" data-name="${esc(c.name)}" title="Nouveau lien administrateur">🔗</button><button class="btn sm ghost danger-text" data-delclub="${c.id}" data-name="${esc(c.name)}" aria-label="Supprimer">🗑</button></div></td></tr>`).join('')}</tbody></table></div></div>`
+      : empty('🏟️', 'Aucun club', 'Valide une demande d’inscription ou crée un club toi-même.')}`;
   else if (SA.tab === 'users') body = `<div class="card table-card"><div class="table-wrap"><table class="table"><thead><tr><th>Nom</th><th>Email</th><th>Clubs</th><th>Inscrit</th></tr></thead>
     <tbody>${o.user_list.map((u) => `<tr><td>${esc(u.full_name || '')}${u.super ? ' 🛡️' : ''}</td><td>${esc(u.email || '')}</td><td>${u.clubs}</td><td>${fmt.date(u.created_at)}</td></tr>`).join('')}</tbody></table></div></div>`;
   else if (SA.tab === 'reports') body = o.reports.length ? `<div class="card">${o.reports.map((r) => `<div class="member"><span class="emoji-box">${r.status === 'open' ? '🚩' : '✅'}</span><div class="grow"><b>${esc(r.club || 'Plateforme')}</b><p class="pre">${esc(r.reason)}</p><small>${fmt.rel(r.created_at)}</small></div>
@@ -527,31 +577,78 @@ export async function superAdmin(el) {
   else if (SA.tab === 'log') body = `<p class="muted">Dernières actions sur la plateforme. Les erreurs techniques détaillées sont dans le tableau de bord Supabase (journaux).</p><div class="card table-card"><div class="table-wrap"><table class="table"><thead><tr><th>Quand</th><th>Club</th><th>Action</th><th>Élément</th></tr></thead>
     <tbody>${o.recent_log.map((l) => `<tr><td>${fmt.rel(l.created_at)}</td><td>${esc(l.club || '—')}</td><td>${l.action}</td><td>${l.entity} · ${esc(l.summary || '')}</td></tr>`).join('')}</tbody></table></div></div>`;
   else {
-    const plans = settings.find((s) => s.key === 'plans')?.value || {};
-    const open = settings.find((s) => s.key === 'signups_open')?.value !== false;
-    body = `<div class="card"><h3>Paramètres globaux</h3><label class="check"><input type="checkbox" id="signups" ${open ? 'checked' : ''}> <span>Autoriser la création de nouveaux clubs</span></label>
-      <h4>Limites des offres</h4><table class="table"><thead><tr><th>Offre</th><th>Équipes max.</th><th>Joueurs max.</th></tr></thead><tbody>${['gratuit', 'standard', 'premium'].map((p) => `<tr><td>${p}</td>
+    const plans = settings.find((x) => x.key === 'plans')?.value || {};
+    body = `<div class="card"><h3>Inscription des clubs</h3><label class="check"><input type="checkbox" id="needAppr" ${needApproval ? 'checked' : ''}> <span>Les nouveaux clubs doivent être validés par moi</span></label>
+      <p class="muted small">Décoché : n'importe qui peut créer son club directement depuis l'appli.</p>
+      <h4>Limites des offres</h4><table class="table"><thead><tr><th>Offre</th><th>Équipes max.</th><th>Joueurs max.</th></tr></thead><tbody>${PLAN_OPTS.map(([p, l]) => `<tr><td>${l}</td>
         <td><input type="number" min="1" data-lim="${p}.teams" value="${plans[p]?.teams ?? ''}"></td><td><input type="number" min="1" data-lim="${p}.players" value="${plans[p]?.players ?? ''}"></td></tr>`).join('')}</tbody></table>
       <div class="row end mt"><button class="btn primary" id="saveSet">Enregistrer</button></div></div>`;
   }
-  el.innerHTML = `<div class="kpis"><div class="kpi"><b>${o.clubs}</b><small>Clubs (${o.active_clubs} actifs)</small></div><div class="kpi"><b>${o.users}</b><small>Utilisateurs</small></div>
-    <div class="kpi"><b>${o.players}</b><small>Joueurs</small></div><div class="kpi"><b>${o.activities}</b><small>Activités</small></div>
-    <div class="kpi"><b>${o.plans.standard || 0} / ${o.plans.premium || 0}</b><small>Standard / Premium</small></div></div>
+  el.innerHTML = `<div class="kpis"><a class="kpi" href="#/admin" data-goto="apps"><b>${pending.length}</b><small>Demandes en attente</small></a><div class="kpi"><b>${o.clubs}</b><small>Clubs (${o.active_clubs} actifs)</small></div><div class="kpi"><b>${o.users}</b><small>Utilisateurs</small></div>
+    <div class="kpi"><b>${o.players}</b><small>Joueurs</small></div><div class="kpi"><b>${o.plans.standard || 0} / ${o.plans.premium || 0}</b><small>Standard / Premium</small></div></div>
     <div class="tabs">${tabs.map(([k, l]) => `<button class="${SA.tab === k ? 'on' : ''}" data-t="${k}">${l}</button>`).join('')}</div>${body}`;
-  $$('[data-t]', el).forEach((b) => (b.onclick = () => { SA.tab = b.dataset.t; superAdmin(el); }));
-  $$('[data-plan]', el).forEach((s) => (s.onchange = async () => { try { await q(sb.from('clubs').update({ plan: s.value }).eq('id', s.dataset.plan)); toast('Offre modifiée'); } catch (e) { toast(errMsg(e), 'err'); } }));
+  const reload = () => superAdmin(el);
+  const setApproval = async (v) => { await q(sb.from('platform_settings').upsert([{ key: 'clubs_need_approval', value: v }, { key: 'signups_open', value: true }])); S.needApproval = v; toast(v ? 'Validation des clubs activée' : 'Inscriptions libres ouvertes'); reload(); };
+  $$('[data-t]', el).forEach((b) => (b.onclick = () => { SA.tab = b.dataset.t; reload(); }));
+  $$('[data-goto]', el).forEach((b) => (b.onclick = (e) => { e.preventDefault(); SA.tab = 'apps'; SA.appFilter = 'pending'; reload(); }));
+  $$('[data-af]', el).forEach((b) => (b.onclick = () => { SA.appFilter = b.dataset.af; reload(); }));
+  $('#toggleAppr', el) && ($('#toggleAppr', el).onclick = () => setApproval(!needApproval));
+  $('#newClubSA', el) && ($('#newClubSA', el).onclick = () => modal({ title: 'Créer un club', wide: true, body: formHTML([
+      { name: 'name', label: 'Nom du club', required: true }, { name: 'city', label: 'Ville', col: 2 },
+      { name: 'sport', label: 'Sport', type: 'select', options: Object.entries(SPORTS).map(([k, x]) => [k, `${x.emoji} ${x.label}`]), value: 'basket', col: 2 },
+      { name: 'plan', label: 'Offre', type: 'select', options: PLAN_OPTS, col: 2 }, { name: 'contact', label: 'Nom du responsable (facultatif)', col: 2 },
+    ]), actions: [{ label: 'Annuler', cls: 'ghost' }, { label: 'Créer le club', cls: 'primary', run: async (w) => {
+      const v = readForm(w);
+      const r = await q(sb.rpc('admin_create_club', { p_name: v.name, p_sport: v.sport, p_city: v.city || '', p_plan: v.plan, p_contact: v.contact || '' }));
+      await loadMemberships(); reload(); showActivation('Club créé 🎉', r.code, v.name, v.contact); return false;
+    } }] }));
+  $$('[data-approve]', el).forEach((b) => (b.onclick = async () => {
+    const x = apps.find((y) => y.id === b.dataset.approve); const plan = $(`[data-aplan="${x.id}"]`, el).value;
+    b.disabled = true;
+    try {
+      const r = await q(sb.rpc('approve_club_application', { p_id: x.id, p_plan: plan }));
+      await loadMemberships(); reload();
+      if (r.code) showActivation('Club validé 🎉', r.code, x.club_name, x.contact_name, x.email);
+      else toast(`${x.club_name} est validé : ${x.contact_name} y a accès dès maintenant`);
+    } catch (e) { toast(errMsg(e), 'err'); b.disabled = false; }
+  }));
+  $$('[data-reject]', el).forEach((b) => (b.onclick = () => {
+    const x = apps.find((y) => y.id === b.dataset.reject);
+    modal({ title: `Refuser « ${x.club_name} »`, body: formHTML([{ name: 'reason', label: 'Raison (visible par le demandeur)', type: 'textarea', placeholder: 'Ex. : informations incomplètes, club déjà inscrit…' }]),
+      actions: [{ label: 'Annuler', cls: 'ghost' }, { label: 'Refuser la demande', cls: 'danger', run: async (w) => { await q(sb.rpc('reject_club_application', { p_id: x.id, p_reason: readForm(w).reason || '' })); toast('Demande refusée'); reload(); } }] });
+  }));
+  $$('[data-relink]', el).forEach((b) => (b.onclick = () => { const x = apps.find((y) => y.id === b.dataset.relink); showActivation('Lien d’activation', x.invite_code, x.club_name, x.contact_name, x.email); }));
+  $$('[data-invadm]', el).forEach((b) => (b.onclick = async () => {
+    try {
+      const inv = await q(sb.from('invites').insert({ club_id: b.dataset.invadm, role: 'admin', label: 'Responsable du club', max_uses: 2, created_by: S.user.id }).select().single());
+      showActivation('Nouveau lien administrateur', inv.code, b.dataset.name);
+    } catch (e) { toast(errMsg(e), 'err'); }
+  }));
+  $$('[data-delclub]', el).forEach((b) => (b.onclick = () => {
+    const name = b.dataset.name;
+    modal({ title: 'Supprimer définitivement ce club', body: `<p class="lead">Toutes les données de <b>${esc(name)}</b> seront effacées : équipes, joueurs, matchs, messages, documents, cotisations. <b>Impossible de revenir en arrière.</b></p>
+      ${formHTML([{ name: 'confirm', label: `Pour confirmer, écris le nom du club : ${name}`, required: true }])}`,
+      actions: [{ label: 'Annuler', cls: 'ghost' }, { label: 'Supprimer le club', cls: 'danger', run: async (w) => {
+        if (readForm(w).confirm.trim().toLowerCase() !== name.trim().toLowerCase()) throw new Error('Le nom ne correspond pas');
+        await q(sb.from('clubs').delete().eq('id', b.dataset.delclub));
+        if (S.club?.id === b.dataset.delclub) { S.club = null; localStorage.removeItem('cm_club'); }
+        await loadMemberships(); toast('Club supprimé'); reload();
+      } }] });
+  }));
+  $$('[data-plan]', el).forEach((x) => (x.onchange = async () => { try { await q(sb.from('clubs').update({ plan: x.value }).eq('id', x.dataset.plan)); toast('Offre modifiée'); } catch (e) { toast(errMsg(e), 'err'); } }));
   $$('[data-sus]', el).forEach((b) => (b.onclick = async () => {
     const sus = b.dataset.st === 'active';
     if (sus && !(await confirmBox('Suspendre ce club ? Ses membres ne pourront plus accéder à leurs données (rien n’est supprimé).', { ok: 'Suspendre' }))) return;
-    await q(sb.from('clubs').update({ status: sus ? 'suspended' : 'active' }).eq('id', b.dataset.sus)); superAdmin(el);
+    await q(sb.from('clubs').update({ status: sus ? 'suspended' : 'active' }).eq('id', b.dataset.sus)); reload();
   }));
-  $$('[data-close]', el).forEach((b) => (b.onclick = async () => { await q(sb.from('reports').update({ status: 'closed' }).eq('id', b.dataset.close)); superAdmin(el); }));
+  $$('[data-close]', el).forEach((b) => (b.onclick = async () => { await q(sb.from('reports').update({ status: 'closed' }).eq('id', b.dataset.close)); reload(); }));
   $$('[data-manage]', el).forEach((b) => (b.onclick = async () => { await loadMemberships(); location.hash = '#/'; await selectClub(b.dataset.manage); toast('Tu gères ce club en tant que super administrateur'); }));
   $('#saveSet', el) && ($('#saveSet', el).onclick = async () => {
-    const plans = settings.find((s) => s.key === 'plans')?.value || {};
+    const plans = settings.find((x) => x.key === 'plans')?.value || {};
     $$('[data-lim]', el).forEach((i) => { const [p, k] = i.dataset.lim.split('.'); plans[p] = { ...(plans[p] || {}), [k]: +i.value }; });
-    await q(sb.from('platform_settings').upsert([{ key: 'plans', value: plans }, { key: 'signups_open', value: $('#signups', el).checked }]));
-    S.plans = plans; toast('Paramètres enregistrés');
+    const v = $('#needAppr', el).checked;
+    await q(sb.from('platform_settings').upsert([{ key: 'plans', value: plans }, { key: 'clubs_need_approval', value: v }, { key: 'signups_open', value: true }]));
+    S.plans = plans; S.needApproval = v; toast('Paramètres enregistrés');
   });
 }
 

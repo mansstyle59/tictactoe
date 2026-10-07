@@ -283,3 +283,8 @@ export function downloadCSV(name, rows) {
   a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
   a.download = name; a.click();
 }
+
+// WhatsApp : numéro au format international (France par défaut) et liens de partage
+export const waPhone = (p) => { let d = String(p || '').replace(/[^\d+]/g, ''); if (d.startsWith('+')) return d.slice(1); if (d.startsWith('00')) return d.slice(2); if (d.startsWith('0')) return '33' + d.slice(1); return d; };
+export const waLink = (text, phone) => `https://wa.me/${phone ? waPhone(phone) : ''}?text=${encodeURIComponent(text)}`;
+export const appUrl = (hash = '') => `${location.origin}${location.pathname}${hash}`;
