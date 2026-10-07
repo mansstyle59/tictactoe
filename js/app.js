@@ -3,6 +3,7 @@ import { sb, S, role, SPORTS, esc, $, $$, toast, modal, closeModal, formHTML, re
 import * as V from './views.js';
 import * as V2 from './views2.js';
 import * as V3 from './views3.js';
+import * as V4 from './views4.js';
 
 // ---------------------------------------------------------------- navigation
 const NAV = [
@@ -47,7 +48,7 @@ const navFor = () => NAV.filter((n) => n.who === 'all' || n.who.split(',').some(
 
 const ROUTES = [
   [/^$/, V.dashboard], [/^calendrier$/, V.calendar], [/^activites$/, V.activities],
-  [/^activite\/(.+)$/, V.activityDetail], [/^equipes$/, V.teams], [/^equipe\/(.+)$/, V.teamDetail],
+  [/^activite\/(.+)$/, V.activityDetail], [/^groupe\/(.+)$/, V4.groupChat], [/^equipes$/, V.teams], [/^equipe\/(.+)$/, V.teamDetail],
   [/^joueurs$/, V.players], [/^familles$/, V3.families], [/^evenements$/, V2.events], [/^organisation$/, V2.tasks],
   [/^benevoles$/, V2.volunteers], [/^messages$/, V2.messages], [/^documents$/, V2.documents],
   [/^cotisations$/, V2.dues], [/^stats$/, V2.stats], [/^club$/, V2.clubSettings],
@@ -540,7 +541,7 @@ export async function route(silent = false) {
   if (!S.club && !['admin', 'profil'].includes(path)) { location.hash = '#/admin'; return; }
   const top = path.split('/')[0];
   document.body.dataset.depth = path.includes('/') ? 'detail' : 'root';
-  $$('[data-r]').forEach((a) => a.classList.toggle('on', a.dataset.r === top || (top === 'activite' && a.dataset.r === 'activites') || (top === 'equipe' && a.dataset.r === 'equipes')));
+  $$('[data-r]').forEach((a) => a.classList.toggle('on', a.dataset.r === top || (top === 'activite' && a.dataset.r === 'activites') || (top === 'equipe' && a.dataset.r === 'equipes') || (top === 'groupe' && a.dataset.r === 'messages')));
   const nav = NAV.find((n) => n.r === top);
   setTitle(top === '' ? (S.club?.name || 'Accueil') : (innerWidth < 900 && nav?.short) || nav?.label || '');
   if (!silent) { view.innerHTML = SKELETON; window.scrollTo(0, 0); }

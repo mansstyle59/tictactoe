@@ -1,0 +1,226 @@
+// ClubManager — groupes de discussion et suppression d'un club
+import { sb, S, role, esc, $, $$, fmt, toast, modal, closeModal, confirmBox, formHTML, readForm, errMsg, q, empty, avatar, badge, haptic } from './core.js';
+import { setTitle, refreshCounters, loadMemberships } from './app.js';
+
+const ROLE_LABEL = { admin: 'Admin', coach: 'Entraîneur', player: 'Joueur', parent: 'Parent', volunteer: 'Bénévole' };
+const EMOJIS = ['💬', '🏀', '🏆', '👨‍👩‍👧', '🧑‍🏫', '🙋', '🚗', '🍔', '📣', '⭐️', '🔥', '🎉'];
+const who = (id) => S.members.find((m) => m.id === id);
+const nameOf = (id) => who(id)?.full_name || 'Membre';
+
+// ---------------------------------------------------------------- liste des groupes
+export async function groupList(el) {
+  const [groups, mine] = await Promise.all([
+    q(sb.from('chat_groups').select('*').eq('club_id', S.club.id).order('last_message_at', { ascending: false })),
+    q(sb.from('chat_group_members').select('group_id, user_id').eq('club_id', S.club.id)),
+  ]);
+  const ids = groups.map((g) => g.id);
+  const [msgs, reads] = ids.length ? await Promise.all([
+    q(sb.from('messages').select('id, group_id, sender_id, sender_name, body, created_at').in('group_id', ids).order('created_at', { ascending: false }).limit(400)),
+    q(sb.from('message_reads').select('message_id').eq('user_id', S.user.id)),
+  ]) : [[], []];
+  const readSet = new Set(reads.map((r) => r.message_id));
+  const count = (g) => mine.filter((m) => m.group_id === g.id).length;
+  const isIn = (g) => mine.some((m) => m.group_id === g.id && m.user_id === S.user.id);
+  const last = (g) => msgs.find((m) => m.group_id === g.id);
+  const unread = (g) => msgs.filter((m) => m.group_id === g.id && m.sender_id !== S.user.id && !readSet.has(m.id)).length;
+
+  el.innerHTML = `<div class="toolbar"><p class="muted">${groups.length ? `${groups.length} groupe${groups.length > 1 ? 's' : ''}` : ''}</p>
+      ${role.staff() ? '<button class="btn primary" id="newGroup">＋ Nouveau groupe</button>' : ''}</div>
+    ${groups.length ? `<div class="card list">${groups.map((g) => { const l = last(g), u = unread(g); return `<a class="list-row grp-row" href="#/groupe/${g.id}">
+        <span class="grp-emoji">${esc(g.emoji)}</span><span class="grow"><b>${esc(g.name)}</b>
+        <small>${l ? `${l.sender_id === S.user.id ? 'Toi' : esc(l.sender_name || 'Membre')} : ${esc(l.body.slice(0, 70))}` : `${count(g)} membre${count(g) > 1 ? 's' : ''} · aucun message`}${!isIn(g) ? ' · 👁 lecture admin' : ''}</small></span>
+        <span class="grp-meta">${l ? `<small>${fmt.rel(l.created_at)}</small>` : ''}${u ? `<span class="badge-dot">${u > 99 ? '99+' : u}</span>` : ''}</span></a>`; }).join('')}</div>`
+    : empty('💬', 'Aucun groupe', role.staff() ? 'Crée un groupe pour une équipe, les parents d’une catégorie, les bénévoles d’un tournoi…' : 'Tu n’es dans aucun groupe pour le moment. Le club t’ajoutera aux groupes de ton équipe.')}`;
+  $('#newGroup', el) && ($('#newGroup', el).onclick = () => groupForm({}, (g) => (location.hash = `#/groupe/${g.id}`)));
+}
+
+// ---------------------------------------------------------------- créer / modifier un groupe
+export function groupForm(g = {}, after) {
+  const editing = !!g.id;
+  let picked = new Set();
+  const people = S.members.filter((m) => m.id !== S.user.id);
+  modal({ title: editing ? 'Modifier le groupe' : 'Nouveau groupe', wide: true,
+    body: `<div class="emoji-pick" id="emo">${EMOJIS.map((e) => `<button type="button" class="${(g.emoji || '💬') === e ? 'on' : ''}" data-e="${e}">${e}</button>`).join('')}</div>` + formHTML([
+      { name: 'name', label: 'Nom du groupe', required: true, value: g.name, placeholder: 'Ex. : Parents U13 Garçons' },
+      { name: 'description', label: 'Description (facultatif)', value: g.description },
+      { name: 'team_id', label: 'Lié à une équipe', type: 'select', options: [['', '— Aucune —'], ...S.teams.map((t) => [t.id, t.name])], value: g.team_id || '' },
+      { name: 'only_managers_post', label: '📣 Seuls les gestionnaires peuvent écrire (groupe d’annonces)', type: 'checkbox', value: g.only_managers_post },
+    ]) + (editing ? '' : `<h4 class="mt">Membres</h4>
+      <div class="chips" id="quick"><button type="button" class="chip" data-q="team">🏷️ Toute l’équipe choisie</button>
+        ${Object.entries(ROLE_LABEL).map(([r, l]) => `<button type="button" class="chip" data-q="${r}">${l}s</button>`).join('')}<button type="button" class="chip" data-q="none">Aucun</button></div>
+      <input type="search" id="pplQ" placeholder="Rechercher une personne…" aria-label="Rechercher" class="mt">
+      <div class="kid-pick" id="ppl">${people.map((m) => `<label class="kid-opt" data-name="${esc(m.full_name.toLowerCase())}"><input type="checkbox" value="${m.id}">${avatar(m.full_name, null, 'sm')}
+        <span class="grow"><b>${esc(m.full_name)}</b><small>${m.roles.map((r) => ROLE_LABEL[r]).join(', ')}</small></span></label>`).join('') || '<p class="muted">Aucun autre membre pour l’instant : invite d’abord des personnes au club.</p>'}</div>
+      <p class="muted small" id="pplN">0 personne sélectionnée (tu es ajouté automatiquement)</p>`),
+    actions: [{ label: 'Annuler', cls: 'ghost' }, { label: editing ? 'Enregistrer' : 'Créer le groupe', cls: 'primary', run: async (w) => {
+      const v = readForm(w);
+      const row = { name: v.name.trim(), description: v.description || null, team_id: v.team_id || null, only_managers_post: !!v.only_managers_post, emoji: $('#emo .on', w)?.dataset.e || '💬' };
+      if (editing) { await q(sb.from('chat_groups').update(row).eq('id', g.id)); toast('Groupe modifié'); after?.(g); return; }
+      const created = await q(sb.from('chat_groups').insert({ ...row, club_id: S.club.id, created_by: S.user.id }).select().single());
+      const ids = [...picked].filter((id) => id !== S.user.id);
+      if (ids.length) await q(sb.from('chat_group_members').insert(ids.map((user_id) => ({ group_id: created.id, user_id, club_id: S.club.id }))));
+      haptic(); toast(`Groupe créé · ${ids.length + 1} membre${ids.length ? 's' : ''}`); after?.(created);
+    } }],
+    onOpen: (w) => {
+      $$('#emo [data-e]', w).forEach((b) => (b.onclick = () => { $$('#emo [data-e]', w).forEach((x) => x.classList.remove('on')); b.classList.add('on'); }));
+      if (editing) return;
+      const sync = () => { picked = new Set($$('#ppl input:checked', w).map((i) => i.value)); $('#pplN', w).textContent = `${picked.size} personne${picked.size > 1 ? 's' : ''} sélectionnée${picked.size > 1 ? 's' : ''} (tu es ajouté automatiquement)`; };
+      const check = (ids) => { $$('#ppl input', w).forEach((i) => { if (ids.has(i.value)) i.checked = true; }); sync(); };
+      $$('#ppl input', w).forEach((i) => (i.onchange = sync));
+      $('#pplQ', w).oninput = (e) => { const s = e.target.value.toLowerCase().trim(); $$('#ppl .kid-opt', w).forEach((l) => (l.hidden = s && !l.dataset.name.includes(s))); };
+      $$('#quick [data-q]', w).forEach((b) => (b.onclick = async () => {
+        const k = b.dataset.q;
+        if (k === 'none') { $$('#ppl input', w).forEach((i) => (i.checked = false)); return sync(); }
+        if (k === 'team') {
+          const t = $('[name=team_id]', w).value;
+          if (!t) return toast('Choisis d’abord l’équipe dans « Lié à une équipe »', 'err');
+          const ids = await q(sb.rpc('team_people', { p_team: t })).catch(() => []);
+          const set = new Set((ids || []).map((x) => (typeof x === 'string' ? x : x.team_people)));
+          if (!set.size) toast('Personne de cette équipe n’a encore de compte', 'info');
+          if (!$('[name=name]', w).value) $('[name=name]', w).value = S.teams.find((x) => x.id === t)?.name || '';
+          return check(set);
+        }
+        check(new Set(people.filter((m) => m.roles.includes(k)).map((m) => m.id)));
+      }));
+    } });
+}
+
+// ---------------------------------------------------------------- conversation
+let liveGroup = null;
+export async function groupChat(el, id) {
+  const g = (await q(sb.from('chat_groups').select('*').eq('id', id).limit(1)))[0];
+  if (!g) { el.innerHTML = empty('🔒', 'Groupe introuvable', 'Ce groupe a été supprimé ou tu n’en fais plus partie.'); return; }
+  setTitle(`${g.emoji} ${g.name}`);
+  const [members, msgs] = await Promise.all([
+    q(sb.from('chat_group_members').select('*').eq('group_id', id)),
+    q(sb.from('messages').select('*').eq('group_id', id).order('created_at', { ascending: false }).limit(200)),
+  ]);
+  msgs.reverse();
+  const me = members.find((m) => m.user_id === S.user.id);
+  const manager = !!me?.is_manager || g.created_by === S.user.id || role.admin();
+  const canPost = !!me && (!g.only_managers_post || manager);
+
+  let prevDay = '';
+  const bubble = (m) => {
+    const mine = m.sender_id === S.user.id;
+    const day = fmt.dayLong(m.created_at);
+    const sep = day !== prevDay ? `<div class="chat-day"><span>${day}</span></div>` : ''; prevDay = day;
+    return `${sep}<div class="bubble-row ${mine ? 'me' : ''}">${mine ? '' : avatar(m.sender_name, null, 'sm')}
+      <div class="bubble" data-mid="${m.id}" data-own="${mine || role.admin() ? 1 : ''}">${mine ? '' : `<b>${esc(m.sender_name || 'Membre')}</b>`}<p class="pre">${esc(m.body)}</p><small>${fmt.time(m.created_at)}</small></div></div>`;
+  };
+  el.innerHTML = `<div class="chat">
+    <button class="chat-head card" id="gInfo"><span class="grp-emoji">${esc(g.emoji)}</span><span class="grow"><b>${esc(g.name)}</b>
+      <small>${members.length} membre${members.length > 1 ? 's' : ''}${g.only_managers_post ? ' · 📣 annonces' : ''}${g.description ? ' · ' + esc(g.description) : ''}</small></span><span class="muted">ⓘ</span></button>
+    <div class="chat-body" id="chatBody">${msgs.length ? msgs.map(bubble).join('') : `<div class="chat-empty">👋 Aucun message.<br>${canPost ? 'Écris le premier !' : ''}</div>`}</div>
+    ${canPost ? `<form class="chat-input" id="chatForm"><textarea name="body" rows="1" placeholder="Écrire un message…" aria-label="Message" maxlength="4000"></textarea><button class="btn primary round" aria-label="Envoyer">➤</button></form>`
+      : `<p class="chat-ro muted small">${me ? '📣 Seuls les gestionnaires peuvent écrire dans ce groupe.' : '👁 Tu consultes ce groupe en tant qu’administrateur du club.'}</p>`}</div>`;
+  const body = $('#chatBody', el);
+  const toBottom = () => (body.scrollTop = body.scrollHeight);
+  toBottom(); window.scrollTo(0, document.body.scrollHeight);
+
+  // lu
+  const unread = msgs.filter((m) => m.sender_id !== S.user.id).map((m) => ({ message_id: m.id, user_id: S.user.id }));
+  if (unread.length) sb.from('message_reads').upsert(unread, { ignoreDuplicates: true }).then(refreshCounters);
+
+  $('#gInfo', el).onclick = () => groupInfo(g, members, manager, () => groupChat(el, id));
+  const form = $('#chatForm', el);
+  if (form) {
+    const ta = $('textarea', form);
+    const grow = () => { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 140) + 'px'; };
+    ta.oninput = grow;
+    ta.onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey && !('ontouchstart' in window)) { e.preventDefault(); form.requestSubmit(); } };
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const text = ta.value.trim(); if (!text) return;
+      ta.value = ''; grow();
+      try {
+        const m = await q(sb.from('messages').insert({ club_id: S.club.id, group_id: id, audience: 'group', sender_id: S.user.id, sender_name: S.profile?.full_name, body: text }).select().single());
+        append(m); haptic();
+      } catch (err) { ta.value = text; toast(errMsg(err), 'err'); }
+    };
+  }
+  const seen = new Set(msgs.map((m) => m.id));
+  const append = (m) => {
+    if (seen.has(m.id)) return; seen.add(m.id);
+    $('.chat-empty', body)?.remove();
+    body.insertAdjacentHTML('beforeend', bubble(m)); bindBubbles(); toBottom();
+  };
+  const bindBubbles = () => $$('.bubble[data-own="1"]', body).forEach((b) => (b.oncontextmenu = b.ondblclick = async (e) => {
+    e.preventDefault();
+    if (await confirmBox('Supprimer ce message ?', { ok: 'Supprimer' })) {
+      try { await q(sb.from('messages').delete().eq('id', b.dataset.mid)); b.closest('.bubble-row').remove(); } catch (err) { toast(errMsg(err), 'err'); }
+    }
+  }));
+  bindBubbles();
+
+  // temps réel
+  liveGroup?.unsubscribe();
+  liveGroup = sb.channel('grp-' + id).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `group_id=eq.${id}` }, (p) => {
+    if (!document.body.contains(body)) { liveGroup?.unsubscribe(); liveGroup = null; return; }
+    append(p.new);
+    if (p.new.sender_id !== S.user.id) sb.from('message_reads').upsert({ message_id: p.new.id, user_id: S.user.id }, { ignoreDuplicates: true }).then(refreshCounters);
+  }).subscribe();
+}
+
+// ---------------------------------------------------------------- infos et membres du groupe
+function groupInfo(g, members, manager, after) {
+  const inIds = new Set(members.map((m) => m.user_id));
+  const others = S.members.filter((m) => !inIds.has(m.id));
+  const sorted = [...members].sort((a, b) => (b.is_manager - a.is_manager) || nameOf(a.user_id).localeCompare(nameOf(b.user_id)));
+  const isMember = inIds.has(S.user.id);
+  modal({ title: `${g.emoji} ${g.name}`, wide: true,
+    body: `${g.description ? `<p class="lead">${esc(g.description)}</p>` : ''}
+      <h4>${members.length} membre${members.length > 1 ? 's' : ''}</h4>
+      <div class="gm-list">${sorted.map((m) => { const p = who(m.user_id); return `<div class="gm-row">${avatar(nameOf(m.user_id), null, 'sm')}
+        <span class="grow"><b>${esc(nameOf(m.user_id))}${m.user_id === S.user.id ? ' (toi)' : ''}</b><small>${m.is_manager ? '⭐️ Gestionnaire · ' : ''}${(p?.roles || []).map((r) => ROLE_LABEL[r]).join(', ')}</small></span>
+        ${manager && m.user_id !== S.user.id ? `<button class="btn sm ghost" data-mgr="${m.user_id}" data-v="${m.is_manager ? '' : 1}" title="${m.is_manager ? 'Retirer le rôle de gestionnaire' : 'Nommer gestionnaire'}">${m.is_manager ? '☆' : '⭐️'}</button><button class="icon-btn" data-rm="${m.user_id}" aria-label="Retirer du groupe">✕</button>` : ''}</div>`; }).join('')}</div>
+      ${manager && others.length ? `<h4 class="mt">Ajouter des personnes</h4><input type="search" id="addQ" placeholder="Rechercher…" aria-label="Rechercher">
+        <div class="kid-pick" id="addL">${others.map((m) => `<label class="kid-opt" data-name="${esc(m.full_name.toLowerCase())}"><input type="checkbox" value="${m.id}">${avatar(m.full_name, null, 'sm')}<span class="grow"><b>${esc(m.full_name)}</b><small>${m.roles.map((r) => ROLE_LABEL[r]).join(', ')}</small></span></label>`).join('')}</div>
+        <button class="btn primary block mt" id="addGo">Ajouter au groupe</button>` : ''}
+      ${manager && g.team_id ? '<button class="btn ghost block mt wrap-text" id="syncTeam">🔄 Ajouter les nouveaux de l’équipe</button>' : ''}`,
+    actions: [
+      ...(manager ? [{ label: '🗑 Supprimer le groupe', cls: 'ghost danger-text', run: async () => {
+        if (!(await confirmBox(`Supprimer « ${g.name} » et tous ses messages ?`, { ok: 'Supprimer' }))) return false;
+        await q(sb.from('chat_groups').delete().eq('id', g.id)); toast('Groupe supprimé'); location.hash = '#/messages';
+      } }, { label: '✏️ Modifier', cls: 'ghost', run: () => { closeModal(); setTimeout(() => groupForm(g, after), 250); return false; } }] : []),
+      ...(isMember ? [{ label: 'Quitter le groupe', cls: 'ghost danger-text', run: async () => {
+        if (!(await confirmBox('Quitter ce groupe ? Tu ne recevras plus ses messages.', { ok: 'Quitter' }))) return false;
+        await q(sb.from('chat_group_members').delete().eq('group_id', g.id).eq('user_id', S.user.id)); toast('Tu as quitté le groupe'); location.hash = '#/messages';
+      } }] : []),
+    ],
+    onOpen: (w) => {
+      $$('[data-rm]', w).forEach((b) => (b.onclick = async () => {
+        if (!(await confirmBox(`Retirer ${nameOf(b.dataset.rm)} du groupe ?`, { ok: 'Retirer' }))) return;
+        try { await q(sb.from('chat_group_members').delete().eq('group_id', g.id).eq('user_id', b.dataset.rm)); closeModal(); after(); } catch (e) { toast(errMsg(e), 'err'); }
+      }));
+      $$('[data-mgr]', w).forEach((b) => (b.onclick = async () => {
+        try { await q(sb.from('chat_group_members').update({ is_manager: !!b.dataset.v }).eq('group_id', g.id).eq('user_id', b.dataset.mgr)); closeModal(); after(); } catch (e) { toast(errMsg(e), 'err'); }
+      }));
+      $('#addQ', w) && ($('#addQ', w).oninput = (e) => { const s = e.target.value.toLowerCase().trim(); $$('#addL .kid-opt', w).forEach((l) => (l.hidden = s && !l.dataset.name.includes(s))); });
+      const add = async (ids) => {
+        ids = ids.filter((x) => !inIds.has(x));
+        if (!ids.length) return toast('Aucune nouvelle personne à ajouter', 'info');
+        try { await q(sb.from('chat_group_members').insert(ids.map((user_id) => ({ group_id: g.id, user_id, club_id: S.club.id })))); toast(`${ids.length} personne${ids.length > 1 ? 's' : ''} ajoutée${ids.length > 1 ? 's' : ''}`); closeModal(); after(); }
+        catch (e) { toast(errMsg(e), 'err'); }
+      };
+      $('#addGo', w) && ($('#addGo', w).onclick = () => add($$('#addL input:checked', w).map((i) => i.value)));
+      $('#syncTeam', w) && ($('#syncTeam', w).onclick = async () => {
+        const ids = await q(sb.rpc('team_people', { p_team: g.team_id })).catch(() => []);
+        add((ids || []).map((x) => (typeof x === 'string' ? x : x.team_people)));
+      });
+    } });
+}
+
+// ---------------------------------------------------------------- supprimer un club (administrateurs uniquement)
+export function deleteClubDialog(club, after) {
+  modal({ title: 'Supprimer définitivement ce club', body: `<p class="lead">Toutes les données de <b>${esc(club.name)}</b> seront effacées : équipes, joueurs, familles, matchs, groupes et messages, documents, cotisations. Les membres perdront l’accès à ce club (leur compte reste actif). <b>Impossible de revenir en arrière.</b></p>
+    ${formHTML([{ name: 'confirm', label: `Pour confirmer, écris le nom du club : ${club.name}`, required: true }])}`,
+    actions: [{ label: 'Annuler', cls: 'ghost' }, { label: 'Supprimer le club', cls: 'danger', run: async (w) => {
+      if (readForm(w).confirm.trim().toLowerCase() !== club.name.trim().toLowerCase()) throw new Error('Le nom ne correspond pas');
+      const gone = await q(sb.from('clubs').delete().eq('id', club.id).select('id'));
+      if (!gone?.length) throw new Error('Seul un administrateur du club peut le supprimer');
+      if (S.club?.id === club.id) { S.club = null; try { localStorage.removeItem('cm_club'); } catch {} }
+      toast('Club supprimé');
+      if (after) { await loadMemberships(); after(); } else setTimeout(() => location.replace(location.pathname), 600);
+    } }] });
+}

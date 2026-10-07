@@ -3,6 +3,7 @@ import { sb, S, role, sport, SPORTS, KINDS, kindEmoji, esc, $, $$, fmt, toast, m
   errMsg, q, empty, avatar, badge, fullName, toLocalInput, fromLocalInput, upload, applyBrand, ROLE_LABEL, isPremium, downloadCSV, planLimit } from './core.js';
 import { memberName, refreshClubData, setTitle, refreshCounters, loadMemberships, selectClub, installApp, isStandalone, joinWithCode } from './app.js';
 import { groupInvite } from './views3.js';
+import { groupList, deleteClubDialog } from './views4.js';
 import { actRow, activityForm, loadPlayers, myPlayerIds, inviteDialog, loadActivities } from './views.js';
 
 const startOfDay = (d = new Date()) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
@@ -145,16 +146,22 @@ export async function missionForm(m = {}, after) {
 }
 
 // ---------------------------------------------------------------- messages
-const MS = { box: 'all' };
+const MS = { box: 'all', tab: 'groups' };
 export async function messages(el) {
+  const top = `<div class="seg big-seg"><button class="${MS.tab === 'groups' ? 'on' : ''}" data-mt="groups">💬 Groupes</button><button class="${MS.tab === 'mail' ? 'on' : ''}" data-mt="mail">✉️ Messages & annonces</button></div>`;
+  const bindTop = () => $$('[data-mt]', el).forEach((b) => (b.onclick = () => { MS.tab = b.dataset.mt; messages(el); }));
+  if (MS.tab === 'groups') {
+    el.innerHTML = top + '<div id="grpZone"></div>'; bindTop();
+    return groupList($('#grpZone', el));
+  }
   const [list, reads] = await Promise.all([
-    q(sb.from('messages').select('*').eq('club_id', S.club.id).order('created_at', { ascending: false }).limit(150)),
+    q(sb.from('messages').select('*').eq('club_id', S.club.id).neq('audience', 'group').order('created_at', { ascending: false }).limit(150)),
     q(sb.from('message_reads').select('message_id').eq('user_id', S.user.id)),
   ]);
   const readSet = new Set(reads.map((r) => r.message_id));
   const f = list.filter((m) => MS.box === 'all' || (MS.box === 'ann' && m.is_announcement) || (MS.box === 'in' && m.sender_id !== S.user.id) || (MS.box === 'out' && m.sender_id === S.user.id));
   const AUD = { all: '🏟️ Tout le club', team: '🏷️ Équipe', parents: '👨‍👩‍👧 Parents', coaches: '🧑‍🏫 Entraîneurs', user: '👤 Personnel' };
-  el.innerHTML = `<div class="toolbar"><div class="seg">${[['all', 'Tous'], ['ann', '📣 Annonces'], ['in', 'Reçus'], ['out', 'Envoyés']].map(([k, l]) => `<button class="${MS.box === k ? 'on' : ''}" data-b="${k}">${l}</button>`).join('')}</div>
+  el.innerHTML = top + `<div class="toolbar"><div class="seg">${[['all', 'Tous'], ['ann', '📣 Annonces'], ['in', 'Reçus'], ['out', 'Envoyés']].map(([k, l]) => `<button class="${MS.box === k ? 'on' : ''}" data-b="${k}">${l}</button>`).join('')}</div>
     <div class="row gap">${'Notification' in window && Notification.permission === 'default' ? '<button class="btn ghost sm" id="notifOn">🔔 Activer les notifications</button>' : ''}<button class="btn primary" id="newMsg">✉️ Nouveau message</button></div></div>
     ${f.length ? `<div class="card msgs">${f.map((m) => { const unread = m.sender_id !== S.user.id && !readSet.has(m.id); return `<article class="msg ${m.is_announcement ? 'ann' : ''} ${unread ? 'unread' : ''}">
       ${avatar(m.sender_name)}<div class="grow"><div class="msg-head"><b>${esc(m.sender_name || 'Membre')}</b><small>${fmt.rel(m.created_at)}</small></div>
@@ -166,6 +173,7 @@ export async function messages(el) {
   // marquer comme lus
   const toMark = f.filter((m) => m.sender_id !== S.user.id && !readSet.has(m.id)).map((m) => ({ message_id: m.id, user_id: S.user.id }));
   if (toMark.length) sb.from('message_reads').upsert(toMark, { ignoreDuplicates: true }).then(refreshCounters);
+  bindTop();
   $$('[data-b]', el).forEach((b) => (b.onclick = () => { MS.box = b.dataset.b; messages(el); }));
   $('#newMsg', el).onclick = () => compose({}, () => messages(el));
   $('#notifOn', el) && ($('#notifOn', el).onclick = async () => { const p = await Notification.requestPermission(); toast(p === 'granted' ? 'Notifications activées 🔔' : 'Notifications refusées', p === 'granted' ? 'ok' : 'err'); messages(el); });
@@ -385,7 +393,8 @@ export async function clubSettings(el) {
         { name: 'is_public', label: 'Page publique visible par tous', type: 'checkbox' },
       ], { ...c, ...(c.socials || {}) })}
       <div class="invite-box"><small>Page publique</small><input readonly value="${esc(publicUrl)}" aria-label="Lien de la page publique"><div class="row gap"><button class="btn sm ghost" id="cpPub">📋 Copier</button><a class="btn sm ghost" href="#/club/${c.slug}" target="_blank">Voir la page</a></div></div>
-      <div class="row end mt"><button class="btn primary" id="saveClub">Enregistrer</button></div></div>`;
+      <div class="row end mt"><button class="btn primary" id="saveClub">Enregistrer</button></div></div>
+      ${role.admin() ? `<div class="card danger-zone"><h3>⚠️ Zone dangereuse</h3><p class="muted">Supprimer le club efface toutes ses données. Réservé aux administrateurs.</p><button class="btn danger" id="delMyClub">Supprimer ce club</button></div>` : ''}`;
   } else if (CT.tab === 'membres') {
     body = `<div class="toolbar"><p class="muted">${S.members.length} membre(s) avec un compte</p><div class="row gap wrap"><button class="btn wa" id="waM">WhatsApp</button><button class="btn primary" id="invM">🔗 Inviter</button></div></div>
       <div class="card">${S.members.map((m) => `<div class="member">${avatar(m.full_name)}<div class="grow"><b>${esc(m.full_name)}</b><small>${esc(m.email || '')}</small>
@@ -423,6 +432,7 @@ export async function clubSettings(el) {
   const reload = async () => { await refreshClubData(); clubSettings(el); };
 
   if (CT.tab === 'infos') {
+    $('#delMyClub', el) && ($('#delMyClub', el).onclick = () => deleteClubDialog(c));
     $('#cpPub', el).onclick = () => navigator.clipboard.writeText(publicUrl).then(() => toast('Lien copié'));
     $('#logo', el).onchange = async (e) => {
       try { const url = await upload(e.target.files[0], 'club-public', 'logo'); await q(sb.from('clubs').update({ logo_url: url }).eq('id', c.id)); S.club.logo_url = url; toast('Logo mis à jour'); location.reload(); }
@@ -624,17 +634,7 @@ export async function superAdmin(el) {
       showActivation('Nouveau lien administrateur', inv.code, b.dataset.name);
     } catch (e) { toast(errMsg(e), 'err'); }
   }));
-  $$('[data-delclub]', el).forEach((b) => (b.onclick = () => {
-    const name = b.dataset.name;
-    modal({ title: 'Supprimer définitivement ce club', body: `<p class="lead">Toutes les données de <b>${esc(name)}</b> seront effacées : équipes, joueurs, matchs, messages, documents, cotisations. <b>Impossible de revenir en arrière.</b></p>
-      ${formHTML([{ name: 'confirm', label: `Pour confirmer, écris le nom du club : ${name}`, required: true }])}`,
-      actions: [{ label: 'Annuler', cls: 'ghost' }, { label: 'Supprimer le club', cls: 'danger', run: async (w) => {
-        if (readForm(w).confirm.trim().toLowerCase() !== name.trim().toLowerCase()) throw new Error('Le nom ne correspond pas');
-        await q(sb.from('clubs').delete().eq('id', b.dataset.delclub));
-        if (S.club?.id === b.dataset.delclub) { S.club = null; localStorage.removeItem('cm_club'); }
-        await loadMemberships(); toast('Club supprimé'); reload();
-      } }] });
-  }));
+  $$('[data-delclub]', el).forEach((b) => (b.onclick = () => deleteClubDialog({ id: b.dataset.delclub, name: b.dataset.name }, reload)));
   $$('[data-plan]', el).forEach((x) => (x.onchange = async () => { try { await q(sb.from('clubs').update({ plan: x.value }).eq('id', x.dataset.plan)); toast('Offre modifiée'); } catch (e) { toast(errMsg(e), 'err'); } }));
   $$('[data-sus]', el).forEach((b) => (b.onclick = async () => {
     const sus = b.dataset.st === 'active';

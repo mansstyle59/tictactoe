@@ -1,6 +1,6 @@
 // ClubManager — service worker (appli installable + hors connexion)
-const V = 'cm-v4';
-const SHELL = ['./', './index.html', './styles.css', './js/core.js','./js/app.js','./js/views.js','./js/views2.js','./js/views3.js',
+const V = 'cm-v5';
+const SHELL = ['./', './index.html', './styles.css', './js/core.js','./js/app.js','./js/views.js','./js/views2.js','./js/views3.js','./js/views4.js',
   './vendor/supabase.js', './manifest.webmanifest', './icons/logo.svg', './icons/icon-192.png', './icons/icon-512.png', './favicon.svg'];
 
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(V).then((c) => c.addAll(SHELL))); });
