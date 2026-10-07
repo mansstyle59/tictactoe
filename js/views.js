@@ -1,5 +1,5 @@
 // ClubManager — tableau de bord, calendrier, activités, équipes, joueurs
-import { waLink, appUrl, sb, S, role, sport, SPORTS, KINDS, kindEmoji, esc, $, $$, fmt, toast, modal, closeModal, confirmBox, formHTML, readForm,
+import { SPACES, spaceTeams, waLink, appUrl, sb, S, role, sport, SPORTS, KINDS, kindEmoji, esc, $, $$, fmt, toast, modal, closeModal, confirmBox, formHTML, readForm,
   errMsg, q, empty, avatar, badge, fullName, toLocalInput, fromLocalInput, planLimit, uid, haptic } from './core.js';
 import { icon, memberName, refreshClubData, setTitle, refreshCounters, installApp, isStandalone } from './app.js';
 import { playerFamilyBlock, contactForm, myChildrenBlock, parentLinkCard, linkChildForm, WA_ICON } from './views3.js';
@@ -47,12 +47,14 @@ export function actRow(a, opts = {}) {
 // ---------------------------------------------------------------- accueil
 export async function dashboard(el) {
   const now = new Date();
-  const soon = await loadActivities(now, addDays(now, 30));
+  const myTeams = spaceTeams(), myIds = new Set(myTeams.map((t) => t.id));
+  let soon = await loadActivities(now, addDays(now, 30));
+  if (S.space === 'coach' && myTeams.length < S.teams.length) soon = soon.filter((a) => !a.team_id || myIds.has(a.team_id));
   const staff = role.staff();
   const fam = role.family();
   const parts = [];
   const greet = (S.profile?.full_name || '').split(' ')[0];
-  parts.push(`<div class="hello"><div><p class="hello-date">${fmt.dayLong(now)}</p><h2>Bonjour ${esc(greet)} 👋</h2></div>
+  parts.push(`<div class="hello"><div><p class="hello-date">${fmt.dayLong(now)}</p><h2>Bonjour ${esc(greet)} 👋</h2><p class="hello-space">${SPACES[S.space]?.emoji || ''} ${esc(SPACES[S.space]?.hello || '')}</p></div>
     ${staff ? `<button class="btn primary round" id="quickAdd" aria-label="Ajouter"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span>Ajouter</span></button>` : ''}</div>`);
 
   const nextGame = soon.find((a) => ['match', 'tournament'].includes(a.kind)) || soon.find((a) => a.kind === 'training');
@@ -61,16 +63,17 @@ export async function dashboard(el) {
     <p>Les joueurs de l'équipe seront convoqués automatiquement.</p><button class="btn white" id="heroAdd">＋ Ajouter un match</button></div></div>`);
 
   if (staff) {
-    const [players, dues, tasks, pend] = await Promise.all([
+    const [allPlayers, dues, tasks, pend] = await Promise.all([
       loadPlayers(),
       role.admin() ? q(sb.from('dues').select('amount, paid').eq('club_id', S.club.id)) : Promise.resolve([]),
       q(sb.from('tasks').select('id, status').eq('club_id', S.club.id).neq('status', 'done')),
       q(sb.from('attendance').select('activity_id, response, activities!inner(starts_at)').eq('club_id', S.club.id).eq('response', 'pending').gte('activities.starts_at', now.toISOString())).catch(() => []),
     ]);
+    const players = S.space === 'coach' ? allPlayers.filter((p) => myIds.has(p.team_id)) : allPlayers;
     const due = dues.reduce((s, d) => s + Math.max(0, d.amount - d.paid), 0);
     const kpi = [
-      ['👥', players.length, 'Licenciés', '#/joueurs'],
-      ['🏷️', S.teams.length, 'Équipes', '#/equipes'],
+      ['👥', players.length, S.space === 'coach' ? 'Mes joueurs' : 'Licenciés', '#/joueurs'],
+      ['🏷️', myTeams.length, S.space === 'coach' ? 'Mes équipes' : 'Équipes', '#/equipes'],
       ['📅', soon.filter((a) => a.kind === 'match').length, 'Matchs (30 j)', '#/activites'],
       ['⏳', pend.length, 'Réponses en attente', '#/activites'],
       ...(role.admin() ? [['💶', fmt.money(due), 'Cotisations dues', '#/cotisations']] : []),
@@ -604,9 +607,10 @@ function statsReadonly(a, players) {
 export async function teams(el) {
   const players = await loadPlayers();
   const coaches = S.members.filter((m) => m.roles.includes('coach') || m.roles.includes('admin'));
-  el.innerHTML = `<div class="toolbar"><p class="muted">${S.teams.length} équipe(s) · ${esc(S.season?.name || '')}</p>
+  const shown = spaceTeams();
+  el.innerHTML = `<div class="toolbar"><p class="muted">${shown.length} équipe(s)${shown.length < S.teams.length ? ' dont tu es l’entraîneur' : ''} · ${esc(S.season?.name || '')}</p>
     ${role.admin() ? '<button class="btn primary" id="newTeam">＋ Nouvelle équipe</button>' : ''}</div>
-    ${S.teams.length ? `<div class="cards">${S.teams.map((t) => {
+    ${shown.length ? `<div class="cards">${shown.map((t) => {
       const n = players.filter((p) => p.team_id === t.id).length;
       return `<a class="team-card" href="#/equipe/${t.id}" style="--t:${t.color || 'var(--brand)'}"><div class="team-badge">${esc((t.category || t.name).slice(0, 4))}</div>
         <div><b>${esc(t.name)}</b><small>${[t.category, t.gender, t.level].filter(Boolean).map(esc).join(' · ')}</small>

@@ -1,5 +1,5 @@
 // ClubManager — service worker (appli installable + hors connexion)
-const V = 'cm-v6';
+const V = 'cm-v7';
 const SHELL = ['./', './index.html', './styles.css', './js/core.js','./js/app.js','./js/views.js','./js/views2.js','./js/views3.js','./js/views4.js',
   './vendor/supabase.js', './manifest.webmanifest', './icons/logo.svg', './icons/icon-192.png', './icons/icon-512.png', './favicon.svg'];
 

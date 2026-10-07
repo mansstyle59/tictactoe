@@ -22,6 +22,19 @@ export const role = {
   sa: () => !!S.profile?.is_super_admin,
 };
 
+// ---------------------------------------------------------------- espaces (un par type de compte)
+export const SPACES = {
+  platform: { label: 'Administration', short: 'Administration plateforme', emoji: '🛡️', color: '#0891B2', hello: 'Tous les clubs de la plateforme' },
+  admin: { label: 'Direction du club', short: 'Direction du club', emoji: '🏛️', color: '#5B3FD6', hello: 'Pilotage de tout le club' },
+  coach: { label: 'Espace entraîneur', short: 'Entraîneur', emoji: '🧑‍🏫', color: '#0E9F6E', hello: 'Tes équipes, convocations et présences' },
+  parent: { label: 'Espace parents', short: 'Parent', emoji: '👨‍👩‍👧', color: '#EA580C', hello: 'Le planning et les convocations de tes enfants' },
+  player: { label: 'Espace joueur', short: 'Joueur', emoji: '🏃', color: '#2563EB', hello: 'Tes matchs, entraînements et ton équipe' },
+  volunteer: { label: 'Espace bénévole', short: 'Bénévole', emoji: '🙋', color: '#DB2777', hello: 'Tes missions et les tâches du club' },
+};
+export const ROLE_ORDER = ['admin', 'coach', 'parent', 'player', 'volunteer'];
+// équipes visibles : un entraîneur voit d'abord les siennes
+export const spaceTeams = () => { if (S.space !== 'coach') return S.teams; const mine = S.teams.filter((t) => t.coach_id === S.user.id || t.assistant_id === S.user.id); return mine.length ? mine : S.teams; };
+
 // ---------------------------------------------------------------- sports
 export const SPORTS = {
   basket: { label: 'Basket', emoji: '🏀', cats: ['U7', 'U9', 'U11', 'U13', 'U15', 'U18', 'U21', 'Seniors', 'Loisirs'],

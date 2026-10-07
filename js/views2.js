@@ -540,9 +540,10 @@ function showActivation(title, code, clubName, contact, email) {
     onOpen: (w) => { $('[data-copy]', w).onclick = () => navigator.clipboard.writeText(box.msg).then(() => toast('Message copié')); } });
 }
 
-export async function superAdmin(el) {
+export async function superAdmin(el, tab) {
   if (!role.sa()) { location.hash = '#/'; return; }
-  setTitle('Super Admin');
+  if (!tab) { location.hash = '#/admin/' + SA.tab; return; }
+  SA.tab = tab;
   const [o, settings, apps] = await Promise.all([
     q(sb.rpc('platform_overview')),
     q(sb.from('platform_settings').select('*')),
@@ -594,13 +595,12 @@ export async function superAdmin(el) {
         <td><input type="number" min="1" data-lim="${p}.teams" value="${plans[p]?.teams ?? ''}"></td><td><input type="number" min="1" data-lim="${p}.players" value="${plans[p]?.players ?? ''}"></td></tr>`).join('')}</tbody></table>
       <div class="row end mt"><button class="btn primary" id="saveSet">Enregistrer</button></div></div>`;
   }
-  el.innerHTML = `<div class="kpis"><a class="kpi" href="#/admin" data-goto="apps"><b>${pending.length}</b><small>Demandes en attente</small></a><div class="kpi"><b>${o.clubs}</b><small>Clubs (${o.active_clubs} actifs)</small></div><div class="kpi"><b>${o.users}</b><small>Utilisateurs</small></div>
+  el.innerHTML = `<div class="kpis"><a class="kpi" href="#/admin/apps" data-goto="apps"><b>${pending.length}</b><small>Demandes en attente</small></a><div class="kpi"><b>${o.clubs}</b><small>Clubs (${o.active_clubs} actifs)</small></div><div class="kpi"><b>${o.users}</b><small>Utilisateurs</small></div>
     <div class="kpi"><b>${o.players}</b><small>Joueurs</small></div><div class="kpi"><b>${o.plans.standard || 0} / ${o.plans.premium || 0}</b><small>Standard / Premium</small></div></div>
-    <div class="tabs">${tabs.map(([k, l]) => `<button class="${SA.tab === k ? 'on' : ''}" data-t="${k}">${l}</button>`).join('')}</div>${body}`;
-  const reload = () => superAdmin(el);
+    ${body}`;
+  const reload = () => superAdmin(el, SA.tab);
   const setApproval = async (v) => { await q(sb.from('platform_settings').upsert([{ key: 'clubs_need_approval', value: v }, { key: 'signups_open', value: true }])); S.needApproval = v; toast(v ? 'Validation des clubs activée' : 'Inscriptions libres ouvertes'); reload(); };
-  $$('[data-t]', el).forEach((b) => (b.onclick = () => { SA.tab = b.dataset.t; reload(); }));
-  $$('[data-goto]', el).forEach((b) => (b.onclick = (e) => { e.preventDefault(); SA.tab = 'apps'; SA.appFilter = 'pending'; reload(); }));
+  $$('[data-goto]', el).forEach((b) => (b.onclick = (e) => { e.preventDefault(); SA.appFilter = 'pending'; location.hash = '#/admin/apps'; }));
   $$('[data-af]', el).forEach((b) => (b.onclick = () => { SA.appFilter = b.dataset.af; reload(); }));
   $('#toggleAppr', el) && ($('#toggleAppr', el).onclick = () => setApproval(!needApproval));
   $('#newClubSA', el) && ($('#newClubSA', el).onclick = () => modal({ title: 'Créer un club', wide: true, body: formHTML([
@@ -642,7 +642,7 @@ export async function superAdmin(el) {
     await q(sb.from('clubs').update({ status: sus ? 'suspended' : 'active' }).eq('id', b.dataset.sus)); reload();
   }));
   $$('[data-close]', el).forEach((b) => (b.onclick = async () => { await q(sb.from('reports').update({ status: 'closed' }).eq('id', b.dataset.close)); reload(); }));
-  $$('[data-manage]', el).forEach((b) => (b.onclick = async () => { await loadMemberships(); location.hash = '#/'; await selectClub(b.dataset.manage); toast('Tu gères ce club en tant que super administrateur'); }));
+  $$('[data-manage]', el).forEach((b) => (b.onclick = async () => { await loadMemberships(); location.hash = '#/'; await selectClub(b.dataset.manage, 'admin'); toast('🏛️ Tu es dans la direction de ce club'); }));
   $('#saveSet', el) && ($('#saveSet', el).onclick = async () => {
     const plans = settings.find((x) => x.key === 'plans')?.value || {};
     $$('[data-lim]', el).forEach((i) => { const [p, k] = i.dataset.lim.split('.'); plans[p] = { ...(plans[p] || {}), [k]: +i.value }; });

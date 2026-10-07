@@ -617,3 +617,31 @@ body[data-depth=detail] .large-title-wrap { display: none; }
 .gm-row .grow b, .gm-row .grow small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .gm-row .btn { flex: none; }
 .wrap-text { white-space: normal; }
+
+/* ---------- Espaces : un par type de compte ---------- */
+:root { --space: #5B3FD6; }
+.space-pill { display: inline-flex; align-items: center; gap: 4px; margin-top: 2px; padding: 2px 8px 2px 6px; border-radius: 999px; font-size: .7rem; font-weight: 700;
+  color: var(--space); background: color-mix(in srgb, var(--space) 13%, transparent); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.space-pill .chev { opacity: .75; }
+.top-club-name .space-pill { align-self: flex-start; }
+body.scrolled .top-club-name, body[data-depth=detail] .top-club-name { display: none; }
+.topbar { box-shadow: inset 0 -2px 0 var(--space); border-bottom: 0; }
+body.scrolled .topbar { box-shadow: inset 0 -2px 0 var(--space), 0 6px 18px -12px rgba(0, 0, 0, .35); }
+.side-space { display: block; border: 0; background: none; padding: 0 12px 10px; cursor: pointer; text-align: left; }
+.side-space .space-pill { font-size: .78rem; padding: 4px 10px; }
+.sidebar nav a.on { background: var(--space); color: #fff; }
+.sidebar nav a .ic { color: var(--space); }
+.tabbar a.on { color: var(--space); }
+.hello-space { margin: 4px 0 0; font-size: .86rem; font-weight: 600; color: var(--space); }
+.sp-h { margin: 16px 2px 8px; font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.sp-h:first-child { margin-top: 0; }
+.space-card { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 12px 14px; margin-bottom: 8px; border-radius: 16px; cursor: pointer; font: inherit; color: var(--ink);
+  background: var(--card); border: 1.5px solid var(--sep); transition: transform .12s, border-color .15s; }
+.space-card:active { transform: scale(.98); }
+.space-card.on { border-color: var(--sc); background: color-mix(in srgb, var(--sc) 7%, var(--card)); }
+.space-card .grow { min-width: 0; }
+.space-card b { display: block; }
+.space-card small { display: block; color: var(--muted); font-size: .8rem; }
+.space-ico { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; font-size: 22px; flex: none; background: color-mix(in srgb, var(--sc) 15%, transparent); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--sc) 40%, transparent); }
+.chev-r { color: var(--muted); font-size: 1.4rem; }
+.top-club:focus:not(:focus-visible), .side-space:focus:not(:focus-visible) { outline: none; }

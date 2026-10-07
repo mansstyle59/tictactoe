@@ -1,5 +1,5 @@
 // ClubManager — démarrage, connexion, navigation
-import { sb, S, role, SPORTS, esc, $, $$, toast, modal, closeModal, formHTML, readForm, errMsg, q, applyBrand, avatar, fmt, ROLE_LABEL, haptic } from './core.js';
+import { SPACES, ROLE_ORDER, sb, S, role, SPORTS, esc, $, $$, toast, modal, closeModal, formHTML, readForm, errMsg, q, applyBrand, avatar, fmt, ROLE_LABEL, haptic } from './core.js';
 import * as V from './views.js';
 import * as V2 from './views2.js';
 import * as V3 from './views3.js';
@@ -41,10 +41,38 @@ const ICONS = {
   bell: '<path d="M6 16V11a6 6 0 1 1 12 0v5l2 2H4zM10 21h4"/>',
   family: '<circle cx="7" cy="6" r="2.6"/><circle cx="17" cy="6" r="2.6"/><circle cx="12" cy="13" r="2"/><path d="M3 20v-5a4 4 0 0 1 8 0M13 20v-5a4 4 0 0 1 8 0M9.5 21v-2a2.5 2.5 0 0 1 5 0v2"/>',
   swap: '<path d="M7 7h12l-3-3M17 17H5l3 3"/>',
+  inbox: '<path d="M3 13l3-8h12l3 8v6H3z"/><path d="M3 13h5l1 3h6l1-3h5"/>',
+  flag: '<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
 };
 export const icon = (n) => `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n] || ''}</svg>`;
 
-const navFor = () => NAV.filter((n) => n.who === 'all' || n.who.split(',').some((r) => S.roles.includes(r)));
+const PLATFORM_NAV = [
+  { r: 'admin/apps', icon: 'inbox', label: 'Demandes de clubs', short: 'Demandes' },
+  { r: 'admin/clubs', icon: 'shield', label: 'Clubs', short: 'Clubs' },
+  { r: 'admin/users', icon: 'user', label: 'Utilisateurs', short: 'Comptes' },
+  { r: 'admin/reports', icon: 'flag', label: 'Signalements' },
+  { r: 'admin/log', icon: 'chart', label: 'Activité' },
+  { r: 'admin/settings', icon: 'gear', label: 'Paramètres' },
+];
+const SPACE_NAV = {
+  admin: { only: null, tabs: ['', 'calendrier', 'activites', 'messages'], labels: {} },
+  coach: { only: ['', 'calendrier', 'activites', 'equipes', 'joueurs', 'familles', 'messages', 'evenements', 'documents', 'stats'], tabs: ['', 'activites', 'equipes', 'messages'],
+    labels: { equipes: ['Mes équipes', 'Équipes'], joueurs: ['Mes joueurs', 'Joueurs'] } },
+  parent: { only: ['', 'calendrier', 'activites', 'messages', 'evenements', 'benevoles', 'documents', 'cotisations'], tabs: ['', 'calendrier', 'activites', 'messages'],
+    labels: { activites: ['Convocations', 'Convocations'], benevoles: ['Aider le club', 'Aider'] } },
+  player: { only: ['', 'calendrier', 'activites', 'messages', 'evenements', 'documents', 'cotisations'], tabs: ['', 'calendrier', 'activites', 'messages'],
+    labels: { activites: ['Mes matchs & entraînements', 'Matchs'] } },
+  volunteer: { only: ['', 'benevoles', 'organisation', 'calendrier', 'evenements', 'messages', 'documents'], tabs: ['', 'benevoles', 'organisation', 'messages'],
+    labels: { benevoles: ['Mes missions', 'Missions'], organisation: ['Tâches du club', 'Tâches'] } },
+};
+const navFor = () => {
+  if (S.space === 'platform') return PLATFORM_NAV;
+  const sp = SPACE_NAV[S.space] || SPACE_NAV.parent;
+  const list = NAV.filter((n) => (n.who === 'all' || n.who.split(',').some((r) => S.roles.includes(r))) && (!sp.only || sp.only.includes(n.r)));
+  if (sp.only) list.sort((x, y) => sp.only.indexOf(x.r) - sp.only.indexOf(y.r));
+  return list.map((n) => (sp.labels[n.r] ? { ...n, label: sp.labels[n.r][0], short: sp.labels[n.r][1] } : n));
+};
+const tabsFor = () => (S.space === 'platform' ? ['admin/apps', 'admin/clubs', 'admin/users', 'admin/settings'] : (SPACE_NAV[S.space] || SPACE_NAV.parent).tabs);
 
 const ROUTES = [
   [/^$/, V.dashboard], [/^calendrier$/, V.calendar], [/^activites$/, V.activities],
@@ -52,7 +80,7 @@ const ROUTES = [
   [/^joueurs$/, V.players], [/^familles$/, V3.families], [/^evenements$/, V2.events], [/^organisation$/, V2.tasks],
   [/^benevoles$/, V2.volunteers], [/^messages$/, V2.messages], [/^documents$/, V2.documents],
   [/^cotisations$/, V2.dues], [/^stats$/, V2.stats], [/^club$/, V2.clubSettings],
-  [/^profil$/, V2.profile], [/^admin$/, V2.superAdmin],
+  [/^profil$/, V2.profile], [/^admin(?:\/(\w+))?$/, V2.superAdmin],
 ];
 
 // ---------------------------------------------------------------- démarrage
@@ -125,12 +153,11 @@ async function afterLogin(session) {
     } catch (e) { toast(errMsg(e), 'err'); }
   }
   await loadMemberships();
-  if (!S.clubs.length) {
-    if (S.profile?.is_super_admin) { location.hash = '#/admin'; return shell(); }
-    return noClubYet();
-  }
+  const mine = S.clubs.filter((c) => S.memberships.some((m) => m.club_id === c.id && !m.virtual));
+  if (S.profile?.is_super_admin && (code ? false : (localStorage.getItem('cm_space') !== 'club' || !mine.length))) return enterPlatform();
+  if (!S.clubs.length) return noClubYet();
   const saved = localStorage.getItem('cm_club');
-  await selectClub(S.clubs.find((c) => c.id === saved)?.id || S.clubs[0].id);
+  await selectClub(S.clubs.find((c) => c.id === saved)?.id || (mine[0] || S.clubs[0]).id);
 }
 
 export async function loadMemberships() {
@@ -145,10 +172,25 @@ export async function loadMemberships() {
   S.clubs = ids.length ? await q(sb.from('clubs').select('*').in('id', ids).order('name')) : [];
 }
 
-export async function selectClub(id) {
+// Espace plateforme : réservé à l'administrateur de ClubManager, séparé des clubs
+export function enterPlatform() {
+  S.space = 'platform'; S.club = null; S.roles = []; S.allRoles = []; S.cache = {};
+  document.body.dataset.space = 'platform';
+  try { localStorage.setItem('cm_space', 'platform'); } catch {}
+  applyBrand(null);
+  if (!/^#\/(admin|profil)/.test(location.hash)) location.hash = '#/admin/apps';
+  shell();
+}
+
+export async function selectClub(id, space) {
   S.club = S.clubs.find((c) => c.id === id);
-  S.roles = [...new Set(S.memberships.filter((m) => m.club_id === id).map((m) => m.role))];
-  if (S.profile?.is_super_admin && !S.roles.includes('admin')) S.roles.push('admin');
+  S.allRoles = ROLE_ORDER.filter((r) => S.memberships.some((m) => m.club_id === id && m.role === r));
+  if (S.profile?.is_super_admin && !S.allRoles.includes('admin')) S.allRoles.unshift('admin');
+  let saved = space; try { saved = saved || localStorage.getItem('cm_space_' + id); } catch {}
+  S.space = S.allRoles.includes(saved) ? saved : S.allRoles[0] || 'parent';
+  S.roles = [S.space]; // chaque espace ne montre que ce qui concerne ce type de compte
+  document.body.dataset.space = S.space;
+  try { localStorage.setItem('cm_space', 'club'); localStorage.setItem('cm_space_' + id, S.space); } catch {}
   localStorage.setItem('cm_club', id);
   S.cache = {};
   applyBrand(S.club);
@@ -439,23 +481,28 @@ export function joinWithCode() {
 // ---------------------------------------------------------------- coquille de l'appli
 function shell() {
   const items = navFor();
-  const mobileMain = ['', 'calendrier', 'activites', 'messages'];
+  const mobileMain = tabsFor();
   const c = S.club;
+  const sp = SPACES[S.space] || SPACES.parent;
+  document.documentElement.style.setProperty('--space', sp.color);
   const clubImg = c?.logo_url ? `<img src="${esc(c.logo_url)}" alt="">` : '<img src="icons/logo.svg" alt="">';
+  const canSwitch = (S.allRoles?.length || 0) > 1 || role.sa() || (S.clubs?.length || 0) > 1;
+  const pill = `<span class="space-pill">${sp.emoji} ${esc(sp.short)}${canSwitch ? ' <span class="chev">⌄</span>' : ''}</span>`;
   $('#app').innerHTML = `<div class="layout">
     <aside class="sidebar">
-      <a class="side-brand" href="#/">${clubImg}
-        <span><b>${esc(c?.name || 'ClubManager')}</b><small>${c ? SPORTS[c.sport]?.emoji + ' ' + esc(S.season?.name || '') : ''}</small></span></a>
+      <a class="side-brand" href="#/${S.space === 'platform' ? 'admin/apps' : ''}">${clubImg}
+        <span><b>${esc(c?.name || 'ClubManager')}</b><small>${c ? SPORTS[c.sport]?.emoji + ' ' + esc(S.season?.name || '') : 'Plateforme'}</small></span></a>
+      <button class="side-space" id="sideSpace">${pill}</button>
       <nav>${items.map((n) => `<a href="#/${n.r}" data-r="${n.r}">${icon(n.icon)}<span>${n.label}</span>${n.r === 'messages' ? '<i class="dot" data-unread hidden></i>' : ''}</a>`).join('')}
-      ${role.sa() ? `<a href="#/admin" data-r="admin">${icon('shield')}<span>Super Admin</span></a>` : ''}</nav>
+</nav>
       <div class="side-foot">
-        <button class="side-club" id="switchClub">${icon('swap')}<span>Changer de club</span></button>
-        <a class="side-user" href="#/profil">${avatar(S.profile?.full_name)}<span><b>${esc(S.profile?.full_name || '')}</b><small>${S.roles.map((r) => ROLE_LABEL[r]).join(', ')}</small></span></a>
+        <button class="side-club" id="switchClub">${icon('swap')}<span>Changer d’espace</span></button>
+        <a class="side-user" href="#/profil">${avatar(S.profile?.full_name)}<span><b>${esc(S.profile?.full_name || '')}</b><small>${esc(sp.label)}</small></span></a>
       </div>
     </aside>
     <div class="main">
       <header class="topbar">
-        <button class="top-club" id="topClub" aria-label="Changer de club">${clubImg}<span class="top-club-name"><b>${esc(c?.name || 'ClubManager')}</b><small>${role.sa() && !S.roles.length ? 'Super admin' : ROLE_LABEL[S.roles[0]] || 'Membre'}${S.clubs?.length > 1 ? ' · changer ⌄' : ''}</small></span></button>
+        <button class="top-club" id="topClub" aria-label="Changer d’espace">${clubImg}<span class="top-club-name"><b>${esc(c?.name || 'ClubManager')}</b>${pill}</span></button>
         <h1 id="pageTitle" class="compact-title"></h1>
         <div class="top-actions">
           <button class="icon-btn" id="bell" aria-label="Notifications">${icon('bell')}<i class="count" id="notifCount" hidden></i></button>
@@ -471,6 +518,7 @@ function shell() {
   </div>`;
   $('#switchClub').onclick = switchClub;
   $('#topClub').onclick = switchClub;
+  $('#sideSpace').onclick = switchClub;
   $('#moreBtn').onclick = () => { haptic(); moreSheet(items.filter((n) => !mobileMain.includes(n.r))); };
   $$('.tabbar a').forEach((a) => a.addEventListener('click', () => { haptic(); if (a.classList.contains('on')) window.scrollTo({ top: 0, behavior: 'smooth' }); }));
   $('#bell').onclick = V2.notificationsPanel;
@@ -511,20 +559,29 @@ function pullToRefresh() {
 
 function moreSheet(items) {
   modal({ title: 'Menu', body: `<div class="sheet-grid">${items.map((n) => `<a href="#/${n.r}" class="sheet-item">${icon(n.icon)}<span>${n.short || n.label}</span></a>`).join('')}
-    ${role.sa() ? `<a href="#/admin" class="sheet-item">${icon('shield')}<span>Super Admin</span></a>` : ''}
     <a href="#/profil" class="sheet-item">${icon('user')}<span>Mon profil</span></a>
-    <button class="sheet-item" id="sw2">⇄<span>Changer de club</span></button></div>`,
+    <button class="sheet-item" id="sw2">⇄<span>Changer d’espace</span></button></div>`,
   onOpen: (w) => { $$('a', w).forEach((a) => a.addEventListener('click', closeModal)); $('#sw2', w).onclick = switchClub; } });
 }
 
 function switchClub() {
-  modal({ title: 'Mes clubs', body: `<div class="list">${S.clubs.map((c) => `<button class="list-row" data-club="${c.id}">
-      <span class="emoji-box">${SPORTS[c.sport]?.emoji || '🏅'}</span><span class="grow"><b>${esc(c.name)}</b><small>${S.memberships.filter((m) => m.club_id === c.id).map((m) => ROLE_LABEL[m.role]).join(' · ')}</small></span>
-      ${c.id === S.club?.id ? '<span class="badge ok">Actif</span>' : ''}</button>`).join('')}</div>
-      <div class="row gap wrap mt"><button class="btn ghost" id="newClub">＋ Créer un autre club</button><button class="btn ghost" id="joinClub">🎟️ Rejoindre avec un code</button></div>`,
+  haptic();
+  const spaceCard = (key, sub, attrs, on) => { const s = SPACES[key]; return `<button class="space-card ${on ? 'on' : ''}" style="--sc:${s.color}" ${attrs}>
+      <span class="space-ico">${s.emoji}</span><span class="grow"><b>${esc(s.label)}</b><small>${esc(sub)}</small></span>${on ? '<span class="badge ok">Ouvert</span>' : '<span class="chev-r">›</span>'}</button>`; };
+  const myClubs = S.clubs.filter((c) => S.memberships.some((m) => m.club_id === c.id && !m.virtual));
+  const others = myClubs.filter((c) => c.id !== S.club?.id);
+  modal({ title: 'Changer d’espace', body: `
+    ${role.sa() ? `<h4 class="sp-h">ClubManager</h4>${spaceCard('platform', 'Valider les clubs, gérer toute la plateforme', 'data-platform', S.space === 'platform')}` : ''}
+    ${S.club ? `<h4 class="sp-h">${esc(S.club.name)}</h4>${S.allRoles.map((r) => spaceCard(r, SPACES[r].hello, `data-space="${r}"`, S.space === r)).join('')}` : ''}
+    ${others.length ? `<h4 class="sp-h">Mes autres clubs</h4><div class="list">${others.map((c) => `<button class="list-row" data-club="${c.id}">
+      <span class="emoji-box">${SPORTS[c.sport]?.emoji || '🏅'}</span><span class="grow"><b>${esc(c.name)}</b><small>${ROLE_ORDER.filter((r) => S.memberships.some((m) => m.club_id === c.id && m.role === r)).map((r) => SPACES[r].short).join(' · ')}</small></span></button>`).join('')}</div>` : ''}
+    <div class="row gap wrap mt"><button class="btn ghost" id="joinClub">🎟️ Rejoindre un club avec un code</button>${!role.sa() ? '<button class="btn ghost" id="newClub">＋ Inscrire un club</button>' : ''}</div>
+    <p class="muted small mt">Chaque espace n’affiche que ce qui te concerne dans ce rôle. Ton compte reste le même.</p>`,
   onOpen: (w) => {
+    $('[data-platform]', w) && ($('[data-platform]', w).onclick = () => { closeModal(); location.hash = '#/admin/apps'; enterPlatform(); });
+    $$('[data-space]', w).forEach((b) => (b.onclick = async () => { closeModal(); location.hash = '#/'; await selectClub(S.club.id, b.dataset.space); toast(`${SPACES[b.dataset.space].emoji} ${SPACES[b.dataset.space].label}`); }));
     $$('[data-club]', w).forEach((b) => (b.onclick = async () => { closeModal(); location.hash = '#/'; await selectClub(b.dataset.club); }));
-    $('#newClub', w).onclick = () => { closeModal(); if (S.needApproval && !role.sa()) publicClubApplicationFor(); else onboarding(); };
+    $('#newClub', w) && ($('#newClub', w).onclick = () => { closeModal(); if (S.needApproval) publicClubApplicationFor(); else onboarding(); });
     $('#joinClub', w).onclick = joinWithCode;
   } });
 }
@@ -538,12 +595,15 @@ export async function route(silent = false) {
   let fn, params = [];
   for (const [re, f] of ROUTES) { const m = path.match(re); if (m) { fn = f; params = m.slice(1); break; } }
   if (!fn) { location.hash = '#/'; return; }
-  if (!S.club && !['admin', 'profil'].includes(path)) { location.hash = '#/admin'; return; }
+  const top0 = path.split('/')[0];
+  if (S.space === 'platform' && !['admin', 'profil'].includes(top0)) { location.hash = '#/admin/apps'; return; }
+  if (S.space !== 'platform' && top0 === 'admin') { location.hash = '#/'; return; }
+  if (!S.club && !['admin', 'profil'].includes(top0)) { location.hash = role.sa() ? '#/admin/apps' : '#/'; return; }
   const top = path.split('/')[0];
-  document.body.dataset.depth = path.includes('/') ? 'detail' : 'root';
-  $$('[data-r]').forEach((a) => a.classList.toggle('on', a.dataset.r === top || (top === 'activite' && a.dataset.r === 'activites') || (top === 'equipe' && a.dataset.r === 'equipes') || (top === 'groupe' && a.dataset.r === 'messages')));
-  const nav = NAV.find((n) => n.r === top);
-  setTitle(top === '' ? (innerWidth < 900 ? 'Accueil' : (S.club?.name || 'Accueil')) : (innerWidth < 900 && nav?.short) || nav?.label || '');
+  document.body.dataset.depth = path.includes('/') && top !== 'admin' ? 'detail' : 'root';
+  $$('[data-r]').forEach((a) => a.classList.toggle('on', a.dataset.r === path || a.dataset.r === top || (top === 'activite' && a.dataset.r === 'activites') || (top === 'equipe' && a.dataset.r === 'equipes') || (top === 'groupe' && a.dataset.r === 'messages')));
+  const nav = navFor().find((n) => n.r === path) || navFor().find((n) => n.r === top) || NAV.find((n) => n.r === top);
+  setTitle(top === '' ? (SPACES[S.space]?.label || 'Accueil') : (innerWidth < 900 && nav?.short) || nav?.label || '');
   if (!silent) { view.innerHTML = SKELETON; window.scrollTo(0, 0); }
   try { await fn(view, ...params); }
   catch (e) { console.error(e); view.innerHTML = `<div class="empty"><div class="empty-emoji">⚠️</div><h3>Impossible d'afficher cette page</h3><p>${esc(errMsg(e))}</p><button class="btn ghost" onclick="location.reload()">Recharger</button></div>`; }
