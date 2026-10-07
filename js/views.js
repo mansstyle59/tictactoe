@@ -84,7 +84,7 @@ export async function dashboard(el) {
     if (role.admin()) parts.push(await checklist(players));
   }
 
-  if (fam) parts.push(await myChildrenBlock().catch(() => ''));
+  if (fam || (S.realRoles || []).includes('parent')) parts.push(await myChildrenBlock().catch(() => ''));
   if (S.roles.includes('parent') && !(await myPlayerIds()).length) parts.push(await parentLinkCard());
   if (fam) {
     const mine = await myPlayerIds();

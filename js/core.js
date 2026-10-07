@@ -24,14 +24,15 @@ export const role = {
 
 // ---------------------------------------------------------------- espaces (un par type de compte)
 export const SPACES = {
-  platform: { label: 'Administration', short: 'Administration plateforme', emoji: '🛡️', color: '#0891B2', hello: 'Tous les clubs de la plateforme' },
-  admin: { label: 'Direction du club', short: 'Direction du club', emoji: '🏛️', color: '#5B3FD6', hello: 'Pilotage de tout le club' },
-  coach: { label: 'Espace entraîneur', short: 'Entraîneur', emoji: '🧑‍🏫', color: '#0E9F6E', hello: 'Tes équipes, convocations et présences' },
-  parent: { label: 'Espace parents', short: 'Parent', emoji: '👨‍👩‍👧', color: '#EA580C', hello: 'Le planning et les convocations de tes enfants' },
-  player: { label: 'Espace joueur', short: 'Joueur', emoji: '🏃', color: '#2563EB', hello: 'Tes matchs, entraînements et ton équipe' },
-  volunteer: { label: 'Espace bénévole', short: 'Bénévole', emoji: '🙋', color: '#DB2777', hello: 'Tes missions et les tâches du club' },
+  platform: { label: 'Administration', short: 'Administrateur', emoji: '🛡️', color: '#0891B2', hello: 'Ton espace privé : toi seul y as accès' },
+  admin: { label: 'Espace club', short: 'Club', mode: 'Mode club', emoji: '🏛️', color: '#5B3FD6', hello: 'Pilotage du club, équipes et entraînements' },
+  coach: { label: 'Espace entraîneur', short: 'Entraîneur', mode: 'Mode entraîneur', emoji: '🧑‍🏫', color: '#0E9F6E', hello: 'Tes équipes, convocations et présences' },
+  parent: { label: 'Espace parents', short: 'Parent', mode: 'Mode parent', emoji: '👨‍👩‍👧', color: '#EA580C', hello: 'Le planning et les convocations de tes enfants' },
+  player: { label: 'Espace joueur', short: 'Joueur', mode: 'Mode joueur', emoji: '🏃', color: '#2563EB', hello: 'Tes matchs, entraînements et ton équipe' },
+  volunteer: { label: 'Espace bénévole', short: 'Bénévole', mode: 'Mode bénévole', emoji: '🙋', color: '#DB2777', hello: 'Tes missions et les tâches du club' },
 };
 export const ROLE_ORDER = ['admin', 'coach', 'parent', 'player', 'volunteer'];
+export const ADMIN_MODES = ['admin', 'coach', 'parent', 'player']; // modes réservés au compte administrateur
 // équipes visibles : un entraîneur voit d'abord les siennes
 export const spaceTeams = () => { if (S.space !== 'coach') return S.teams; const mine = S.teams.filter((t) => t.coach_id === S.user.id || t.assistant_id === S.user.id); return mine.length ? mine : S.teams; };
 

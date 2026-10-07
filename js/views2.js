@@ -3,7 +3,7 @@ import { sb, S, role, sport, SPORTS, KINDS, kindEmoji, esc, $, $$, fmt, toast, m
   errMsg, q, empty, avatar, badge, fullName, toLocalInput, fromLocalInput, upload, applyBrand, ROLE_LABEL, isPremium, downloadCSV, planLimit } from './core.js';
 import { memberName, refreshClubData, setTitle, refreshCounters, loadMemberships, selectClub, installApp, isStandalone, joinWithCode } from './app.js';
 import { groupInvite } from './views3.js';
-import { groupList, deleteClubDialog, editMemberDialog, removeMember, platformUsers, deleteMyAccount } from './views4.js';
+import { groupList, deleteClubDialog, editMemberDialog, removeMember, platformUsers, deleteMyAccount, platformHome, platformBroadcast } from './views4.js';
 import { actRow, activityForm, loadPlayers, myPlayerIds, inviteDialog, loadActivities } from './views.js';
 
 const startOfDay = (d = new Date()) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
@@ -542,7 +542,9 @@ function showActivation(title, code, clubName, contact, email) {
 
 export async function superAdmin(el, tab) {
   if (!role.sa()) { location.hash = '#/'; return; }
-  if (!tab) { location.hash = '#/admin/' + SA.tab; return; }
+  if (!tab) { location.hash = '#/admin/home'; return; }
+  if (tab === 'home') return platformHome(el);
+  if (tab === 'annonce') return platformBroadcast(el);
   SA.tab = tab;
   const [o, settings, apps] = await Promise.all([
     q(sb.rpc('platform_overview')),

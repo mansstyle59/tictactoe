@@ -1,5 +1,5 @@
 // ClubManager — démarrage, connexion, navigation
-import { SPACES, ROLE_ORDER, sb, S, role, SPORTS, esc, $, $$, toast, modal, closeModal, formHTML, readForm, errMsg, q, applyBrand, avatar, fmt, ROLE_LABEL, haptic } from './core.js';
+import { SPACES, ROLE_ORDER, ADMIN_MODES, sb, S, role, SPORTS, esc, $, $$, toast, modal, closeModal, formHTML, readForm, errMsg, q, applyBrand, avatar, fmt, ROLE_LABEL, haptic } from './core.js';
 import * as V from './views.js';
 import * as V2 from './views2.js';
 import * as V3 from './views3.js';
@@ -43,13 +43,16 @@ const ICONS = {
   swap: '<path d="M7 7h12l-3-3M17 17H5l3 3"/>',
   inbox: '<path d="M3 13l3-8h12l3 8v6H3z"/><path d="M3 13h5l1 3h6l1-3h5"/>',
   flag: '<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
+  megaphone: '<path d="M3 10v4h4l6 4V6L7 10zM16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12"/>',
 };
 export const icon = (n) => `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n] || ''}</svg>`;
 
 const PLATFORM_NAV = [
+  { r: 'admin/home', icon: 'home', label: 'Tableau de bord', short: 'Accueil' },
   { r: 'admin/apps', icon: 'inbox', label: 'Demandes de clubs', short: 'Demandes' },
   { r: 'admin/clubs', icon: 'shield', label: 'Clubs', short: 'Clubs' },
   { r: 'admin/users', icon: 'user', label: 'Utilisateurs', short: 'Comptes' },
+  { r: 'admin/annonce', icon: 'megaphone', label: 'Annonce à tous', short: 'Annonce' },
   { r: 'admin/reports', icon: 'flag', label: 'Signalements' },
   { r: 'admin/log', icon: 'chart', label: 'Activité' },
   { r: 'admin/settings', icon: 'gear', label: 'Paramètres' },
@@ -88,6 +91,8 @@ const PAGES = {
   stats: ['📊', '#8B5CF6', 'Résultats et chiffres clés'],
   club: ['⚙️', '#475569', 'Infos, membres, saisons et offre'],
   profil: ['👤', '#DB2777', 'Ton compte et tes réglages'],
+  'admin/home': ['🛡️', '#0891B2', 'Ton espace d’administrateur — visible par toi seul'],
+  'admin/annonce': ['📣', '#D97706', 'Un message à tous les clubs'],
   'admin/apps': ['📥', '#0891B2', 'Les clubs qui veulent rejoindre ClubManager'],
   'admin/clubs': ['🏟️', '#0E7490', 'Tous les clubs de la plateforme'],
   'admin/users': ['👥', '#4F46E5', 'Modifier ou supprimer les comptes'],
@@ -95,7 +100,7 @@ const PAGES = {
   'admin/log': ['📈', '#0D9488', 'Dernières actions sur la plateforme'],
   'admin/settings': ['🔧', '#475569', 'Réglages de la plateforme'],
 };
-const tabsFor = () => (S.space === 'platform' ? ['admin/apps', 'admin/clubs', 'admin/users', 'admin/settings'] : (SPACE_NAV[S.space] || SPACE_NAV.parent).tabs);
+const tabsFor = () => (S.space === 'platform' ? ['admin/home', 'admin/apps', 'admin/clubs', 'admin/users'] : (SPACE_NAV[S.space] || SPACE_NAV.parent).tabs);
 
 const ROUTES = [
   [/^$/, V.dashboard], [/^calendrier$/, V.calendar], [/^activites$/, V.activities],
@@ -201,16 +206,23 @@ export function enterPlatform() {
   document.body.dataset.space = 'platform';
   try { localStorage.setItem('cm_space', 'platform'); } catch {}
   applyBrand(null);
-  if (!/^#\/(admin|profil)/.test(location.hash)) location.hash = '#/admin/apps';
+  if (!/^#\/(admin|profil)/.test(location.hash)) location.hash = '#/admin/home';
   shell();
 }
 
 export async function selectClub(id, space) {
   S.club = S.clubs.find((c) => c.id === id);
-  S.allRoles = ROLE_ORDER.filter((r) => S.memberships.some((m) => m.club_id === id && m.role === r));
-  if (S.profile?.is_super_admin && !S.allRoles.includes('admin')) S.allRoles.unshift('admin');
-  let saved = space; try { saved = saved || localStorage.getItem('cm_space_' + id); } catch {}
-  S.space = S.allRoles.includes(saved) ? saved : S.allRoles[0] || 'parent';
+  S.realRoles = ROLE_ORDER.filter((r) => S.memberships.some((m) => m.club_id === id && m.role === r && !m.virtual));
+  if (role.sa()) {
+    // Le compte administrateur est le seul à pouvoir passer d'un mode à l'autre
+    S.allRoles = [...ADMIN_MODES];
+    let saved = space; try { saved = saved || localStorage.getItem('cm_space_' + id); } catch {}
+    S.space = S.allRoles.includes(saved) ? saved : 'admin';
+  } else {
+    // Chaque membre a un seul espace : celui de son rôle principal (club > entraîneur > parent > joueur > bénévole)
+    S.allRoles = S.realRoles.slice(0, 1);
+    S.space = S.realRoles[0] || 'parent';
+  }
   S.roles = [S.space]; // chaque espace ne montre que ce qui concerne ce type de compte
   document.body.dataset.space = S.space;
   try { localStorage.setItem('cm_space', 'club'); localStorage.setItem('cm_space_' + id, S.space); } catch {}
@@ -509,11 +521,11 @@ function shell() {
   const sp = SPACES[S.space] || SPACES.parent;
   document.documentElement.style.setProperty('--space', sp.color);
   const clubImg = c?.logo_url ? `<img src="${esc(c.logo_url)}" alt="">` : '<img src="icons/logo.svg" alt="">';
-  const canSwitch = (S.allRoles?.length || 0) > 1 || role.sa() || (S.clubs?.length || 0) > 1;
-  const pill = `<span class="space-pill">${sp.emoji} ${esc(sp.short)}${canSwitch ? ' <span class="chev">⌄</span>' : ''}</span>`;
+  const canSwitch = role.sa() || (S.clubs?.length || 0) > 1;
+  const pill = `<span class="space-pill">${sp.emoji} ${esc(role.sa() && sp.mode ? sp.mode : sp.short)}${canSwitch ? ' <span class="chev">⌄</span>' : ''}</span>`;
   $('#app').innerHTML = `<div class="layout">
     <aside class="sidebar">
-      <a class="side-brand" href="#/${S.space === 'platform' ? 'admin/apps' : ''}">${clubImg}
+      <a class="side-brand" href="#/${S.space === 'platform' ? 'admin/home' : ''}">${clubImg}
         <span><b>${esc(c?.name || 'ClubManager')}</b><small>${c ? SPORTS[c.sport]?.emoji + ' ' + esc(S.season?.name || '') : 'Plateforme'}</small></span></a>
       <button class="side-space" id="sideSpace">${pill}</button>
       <nav>${items.map((n) => `<a href="#/${n.r}" data-r="${n.r}">${icon(n.icon)}<span>${n.label}</span>${n.r === 'messages' ? '<i class="dot" data-unread hidden></i>' : ''}</a>`).join('')}
@@ -594,15 +606,19 @@ function switchClub() {
   const myClubs = S.clubs.filter((c) => S.memberships.some((m) => m.club_id === c.id && !m.virtual));
   const others = myClubs.filter((c) => c.id !== S.club?.id);
   modal({ title: 'Changer d’espace', body: `
-    ${role.sa() ? `<h4 class="sp-h">ClubManager</h4>${spaceCard('platform', 'Valider les clubs, gérer toute la plateforme', 'data-platform', S.space === 'platform')}` : ''}
-    ${S.club ? `<h4 class="sp-h">${esc(S.club.name)}</h4>${S.allRoles.map((r) => spaceCard(r, SPACES[r].hello, `data-space="${r}"`, S.space === r)).join('')}` : ''}
-    ${others.length ? `<h4 class="sp-h">Mes autres clubs</h4><div class="list">${others.map((c) => `<button class="list-row" data-club="${c.id}">
+    ${role.sa() ? `<h4 class="sp-h">🛡️ Compte administrateur</h4>${spaceCard('platform', 'Valider les clubs, gérer toute la plateforme', 'data-platform', S.space === 'platform')}
+      <h4 class="sp-h">Modes — réservés à l’administrateur</h4>
+      ${S.clubs.length ? `<label class="mode-club">Club : <select id="modeClub" aria-label="Club">${S.clubs.map((c) => `<option value="${c.id}" ${c.id === S.club?.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></label>
+        <div class="mode-grid">${ADMIN_MODES.map((r) => { const s = SPACES[r]; return `<button class="mode-card ${S.space === r ? 'on' : ''}" style="--sc:${s.color}" data-space="${r}"><span class="space-ico">${s.emoji}</span><b>${esc(s.mode)}</b><small>${esc(s.hello)}</small></button>`; }).join('')}</div>`
+        : '<p class="muted">Crée ou valide d’abord un club pour utiliser les modes.</p>'}` : ''}
+    ${!role.sa() && S.club ? `<h4 class="sp-h">${esc(S.club.name)}</h4>${spaceCard(S.space, SPACES[S.space].hello, 'data-noop', true)}` : ''}
+    ${!role.sa() && others.length ? `<h4 class="sp-h">Mes autres clubs</h4><div class="list">${others.map((c) => `<button class="list-row" data-club="${c.id}">
       <span class="emoji-box">${SPORTS[c.sport]?.emoji || '🏅'}</span><span class="grow"><b>${esc(c.name)}</b><small>${ROLE_ORDER.filter((r) => S.memberships.some((m) => m.club_id === c.id && m.role === r)).map((r) => SPACES[r].short).join(' · ')}</small></span></button>`).join('')}</div>` : ''}
     <div class="row gap wrap mt"><button class="btn ghost" id="joinClub">🎟️ Rejoindre un club avec un code</button>${!role.sa() ? '<button class="btn ghost" id="newClub">＋ Inscrire un club</button>' : ''}</div>
-    <p class="muted small mt">Chaque espace n’affiche que ce qui te concerne dans ce rôle. Ton compte reste le même.</p>`,
+    <p class="muted small mt">${role.sa() ? 'Les modes te montrent l’appli exactement comme la voient un club, un entraîneur, un parent ou un joueur. Toi seul peux en changer.' : 'Ton espace est choisi selon ton rôle dans le club.'}</p>`,
   onOpen: (w) => {
-    $('[data-platform]', w) && ($('[data-platform]', w).onclick = () => { closeModal(); location.hash = '#/admin/apps'; enterPlatform(); });
-    $$('[data-space]', w).forEach((b) => (b.onclick = async () => { closeModal(); location.hash = '#/'; await selectClub(S.club.id, b.dataset.space); toast(`${SPACES[b.dataset.space].emoji} ${SPACES[b.dataset.space].label}`); }));
+    $('[data-platform]', w) && ($('[data-platform]', w).onclick = () => { closeModal(); location.hash = '#/admin/home'; enterPlatform(); });
+    $$('[data-space]', w).forEach((b) => (b.onclick = async () => { const cid = $('#modeClub', w)?.value || S.club?.id; closeModal(); location.hash = '#/'; await selectClub(cid, b.dataset.space); toast(`${SPACES[b.dataset.space].emoji} ${SPACES[b.dataset.space].mode}`); }));
     $$('[data-club]', w).forEach((b) => (b.onclick = async () => { closeModal(); location.hash = '#/'; await selectClub(b.dataset.club); }));
     $('#newClub', w) && ($('#newClub', w).onclick = () => { closeModal(); if (S.needApproval) publicClubApplicationFor(); else onboarding(); });
     $('#joinClub', w).onclick = joinWithCode;
@@ -619,9 +635,9 @@ export async function route(silent = false) {
   for (const [re, f] of ROUTES) { const m = path.match(re); if (m) { fn = f; params = m.slice(1); break; } }
   if (!fn) { location.hash = '#/'; return; }
   const top0 = path.split('/')[0];
-  if (S.space === 'platform' && !['admin', 'profil'].includes(top0)) { location.hash = '#/admin/apps'; return; }
+  if (S.space === 'platform' && !['admin', 'profil'].includes(top0)) { location.hash = '#/admin/home'; return; }
   if (S.space !== 'platform' && top0 === 'admin') { location.hash = '#/'; return; }
-  if (!S.club && !['admin', 'profil'].includes(top0)) { location.hash = role.sa() ? '#/admin/apps' : '#/'; return; }
+  if (!S.club && !['admin', 'profil'].includes(top0)) { location.hash = role.sa() ? '#/admin/home' : '#/'; return; }
   const top = path.split('/')[0];
   document.body.dataset.depth = path.includes('/') && top !== 'admin' ? 'detail' : 'root';
   $$('[data-r]').forEach((a) => a.classList.toggle('on', a.dataset.r === path || a.dataset.r === top || (top === 'activite' && a.dataset.r === 'activites') || (top === 'equipe' && a.dataset.r === 'equipes') || (top === 'groupe' && a.dataset.r === 'messages')));

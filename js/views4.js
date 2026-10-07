@@ -1,5 +1,5 @@
 // ClubManager — groupes de discussion et suppression d'un club
-import { sb, S, role, esc, $, $$, fmt, toast, modal, closeModal, confirmBox, formHTML, readForm, errMsg, q, empty, avatar, badge, haptic } from './core.js';
+import { sb, S, role, esc, $, $$, fmt, toast, modal, closeModal, confirmBox, formHTML, readForm, errMsg, q, empty, avatar, badge, haptic, downloadCSV } from './core.js';
 import { setTitle, refreshCounters, loadMemberships } from './app.js';
 
 const ROLE_LABEL = { admin: 'Admin', coach: 'Entraîneur', player: 'Joueur', parent: 'Parent', volunteer: 'Bénévole' };
@@ -265,10 +265,10 @@ export async function platformUsers(el) {
   const rolesOf = (id) => { const by = {}; mems.filter((m) => m.user_id === id).forEach((m) => (by[m.club_id] = [...(by[m.club_id] || []), ROLE_LABEL[m.role]])); return Object.entries(by); };
   el.innerHTML = `<div class="toolbar"><input type="search" id="uq" placeholder="Rechercher un nom, un email, un téléphone" value="${esc(UA.search)}" aria-label="Rechercher"><p class="muted">${list.length} compte${list.length > 1 ? 's' : ''}</p></div>
     ${list.length ? `<div class="card list">${list.map((p) => { const r = rolesOf(p.id); return `<div class="acct">
-      ${avatar(p.full_name)}<div class="grow"><b>${esc(p.full_name || 'Sans nom')}${p.is_super_admin ? ' <span class="badge" style="--b:#0891B2">🛡️ Admin plateforme</span>' : ''}${p.id === S.user.id ? ' <span class="muted small">(toi)</span>' : ''}</b>
+      ${avatar(p.full_name)}<div class="grow"><b>${esc(p.full_name || 'Sans nom')}${p.is_super_admin ? ' <span class="badge admin-badge">🛡️ Administrateur unique</span>' : ''}${p.id === S.user.id ? ' <span class="muted small">(toi)</span>' : ''}</b>
         <small>${esc(p.email || '')}${p.phone ? ' · ' + esc(p.phone) : ''} · inscrit ${fmt.date(p.created_at)}</small>
         <div class="chips">${r.length ? r.map(([cid, rl]) => `<span class="chip sm">${esc(clubName(cid))} · ${rl.join(', ')}</span>`).join('') : '<span class="muted small">Aucun club</span>'}</div></div>
-      <div class="acct-actions"><button class="btn sm ghost" data-edit="${p.id}">✏️ Modifier</button>${p.id !== S.user.id ? `<button class="btn sm ghost danger-text" data-del="${p.id}">🗑</button>` : ''}</div></div>`; }).join('')}</div>`
+      <div class="acct-actions"><button class="btn sm ghost" data-edit="${p.id}">✏️ Modifier</button>${p.id !== S.user.id && !p.is_super_admin ? `<button class="btn sm ghost danger-text" data-del="${p.id}">🗑</button>` : ''}</div></div>`; }).join('')}</div>`
       : empty('👥', 'Aucun compte trouvé')}`;
   const reload = () => platformUsers(el);
   let t; $('#uq', el).oninput = (e) => { clearTimeout(t); t = setTimeout(() => { UA.search = e.target.value; reload().then(() => { const i = $('#uq', el); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }); }, 300); };
@@ -277,11 +277,10 @@ export async function platformUsers(el) {
         { name: 'full_name', label: 'Prénom et nom', required: true, value: p.full_name },
         { name: 'email', label: 'Email de connexion', type: 'email', required: true, value: p.email },
         { name: 'phone', label: 'Téléphone', type: 'tel', value: p.phone || '' },
-        { name: 'is_super_admin', label: '🛡️ Administrateur de la plateforme (accès à tous les clubs)', type: 'checkbox', value: p.is_super_admin },
       ]) + '<button class="btn ghost block mt" id="resetPwd">🔑 Envoyer un lien pour choisir un nouveau mot de passe</button>',
       actions: [{ label: 'Annuler', cls: 'ghost' }, { label: 'Enregistrer', cls: 'primary', run: async (w) => {
         const v = readForm(w);
-        await q(sb.rpc('admin_update_user', { p_user: p.id, p_full_name: v.full_name, p_phone: v.phone, p_email: v.email, p_super: !!v.is_super_admin }));
+        await q(sb.rpc('admin_update_user', { p_user: p.id, p_full_name: v.full_name, p_phone: v.phone, p_email: v.email }));
         if (p.id === S.user.id) Object.assign(S.profile, { full_name: v.full_name, phone: v.phone });
         toast('Compte modifié'); reload();
       } }],
@@ -311,4 +310,60 @@ export function deleteMyAccount() {
       try { localStorage.clear(); } catch {}
       await sb.auth.signOut(); toast('Ton compte a été supprimé'); setTimeout(() => location.replace(location.pathname), 500);
     } }] });
+}
+
+// ---------------------------------------------------------------- tableau de bord de l'administrateur (lui seul)
+export async function platformHome(el) {
+  if (!role.sa()) { location.hash = '#/'; return; }
+  const [o, st] = await Promise.all([q(sb.rpc('platform_overview')), q(sb.rpc('platform_stats'))]);
+  const max = Math.max(1, ...st.weeks.map((w) => w.users));
+  const R = { admin: 'Responsables', coach: 'Entraîneurs', parent: 'Parents', player: 'Joueurs', volunteer: 'Bénévoles' };
+  const alerts = [
+    st.pending_apps ? `<a class="alert-row" href="#/admin/apps"><span>📥</span><b>${st.pending_apps} club${st.pending_apps > 1 ? 's attendent' : ' attend'} ta validation</b><span class="chev-r">›</span></a>` : '',
+    st.open_reports ? `<a class="alert-row bad" href="#/admin/reports"><span>🚩</span><b>${st.open_reports} signalement${st.open_reports > 1 ? 's' : ''} à traiter</b><span class="chev-r">›</span></a>` : '',
+  ].join('');
+  el.innerHTML = `<section class="admin-hero"><div><p class="admin-kicker">🛡️ Compte administrateur unique</p><h2>Bonjour ${esc((S.profile?.full_name || '').split(' ')[0])}</h2>
+      <p>Tu es le seul à voir cet espace. Tout ClubManager se pilote d’ici.</p></div><span class="admin-crest" aria-hidden="true">🛡️</span></section>
+    ${alerts ? `<div class="card alerts">${alerts}</div>` : '<div class="notice">✅ Rien en attente : aucune demande de club ni aucun signalement.</div>'}
+    <div class="kpis">
+      ${[['🏟️', o.clubs, 'Clubs', `${st.clubs_30} ce mois-ci`, '#/admin/clubs'], ['👥', o.users, 'Comptes', `+${st.users_7} cette semaine`, '#/admin/users'], ['🏃', o.players, 'Joueurs', 'licenciés actifs', ''],
+         ['📅', st.activities_7, 'Activités créées', '7 derniers jours', ''], ['💬', st.messages_7, 'Messages', '7 derniers jours', ''], ['💎', `${o.plans.standard || 0} / ${o.plans.premium || 0}`, 'Standard / Premium', 'offres payantes', '#/admin/clubs']]
+        .map(([e, v, l, s, h]) => `<${h ? `a href="${h}"` : 'div'} class="kpi"><span class="kpi-e">${e}</span><b>${v}</b><small>${l}</small><small class="kpi-sub">${s}</small></${h ? 'a' : 'div'}>`).join('')}</div>
+    <div class="grid2">
+      <section class="card"><div class="card-head"><h3>📈 Nouveaux comptes</h3><small class="muted">8 dernières semaines</small></div>
+        <div class="bars">${st.weeks.map((w) => `<div class="bar-col" title="${w.users} compte(s), ${w.clubs} club(s)"><span class="bar-v">${w.users || ''}</span><div class="bar" style="height:${Math.round((w.users / max) * 100)}%"></div><small>${new Date(w.w).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</small></div>`).join('')}</div></section>
+      <section class="card"><div class="card-head"><h3>🧩 Qui utilise ClubManager</h3></div>
+        ${Object.keys(R).map((k) => { const n = st.roles[k] || 0, tot = Math.max(1, ...Object.values(st.roles)); return `<div class="meter-row"><span>${R[k]}</span><div class="meter"><div style="width:${(n / tot) * 100}%"></div></div><b>${n}</b></div>`; }).join('')}
+        <h4>🏆 Clubs les plus actifs</h4>${st.top_clubs.length ? `<ol class="top-list">${st.top_clubs.map((c) => `<li><span>${esc(c.name)}</span><b>${c.members} membre${c.members > 1 ? 's' : ''}</b></li>`).join('')}</ol>` : '<p class="muted">Aucun club pour l’instant.</p>'}</section>
+    </div>
+    <section class="card"><div class="card-head"><h3>⚡ Actions de l’administrateur</h3></div>
+      <div class="sheet-grid admin-actions">
+        <a class="sheet-item" href="#/admin/apps"><span class="big">🏟️</span><span>Créer ou valider un club</span></a>
+        <a class="sheet-item" href="#/admin/annonce"><span class="big">📣</span><span>Envoyer une annonce à tous</span></a>
+        <button class="sheet-item" id="expU"><span class="big">⬇️</span><span>Exporter les comptes</span></button>
+        <button class="sheet-item" id="expC"><span class="big">⬇️</span><span>Exporter les clubs</span></button>
+        <a class="sheet-item" href="#/admin/settings"><span class="big">🔧</span><span>Inscriptions et offres</span></a>
+        <a class="sheet-item" href="#/admin/log"><span class="big">📜</span><span>Journal d’activité</span></a>
+      </div></section>`;
+  $('#expU', el).onclick = () => downloadCSV('clubmanager-comptes.csv', [['Nom', 'Email', 'Clubs', 'Inscrit le'], ...o.user_list.map((u) => [u.full_name, u.email, u.clubs, fmt.date(u.created_at)])]);
+  $('#expC', el).onclick = () => downloadCSV('clubmanager-clubs.csv', [['Club', 'Sport', 'Ville', 'Offre', 'Statut', 'Membres', 'Joueurs', 'Créé le'], ...o.club_list.map((c) => [c.name, c.sport, c.city, c.plan, c.status, c.members, c.players, fmt.date(c.created_at)])]);
+}
+
+// ---------------------------------------------------------------- annonce à toute la plateforme (administrateur seul)
+export async function platformBroadcast(el) {
+  if (!role.sa()) { location.hash = '#/'; return; }
+  el.innerHTML = `<section class="card"><p class="lead">Envoie une notification à tous les membres de ClubManager, ou seulement aux responsables de club. Elle s’affiche dans leur cloche 🔔 et sur leur téléphone si les notifications sont activées.</p>
+    ${formHTML([
+      { name: 'target', label: 'Destinataires', type: 'select', options: [['admins', '🏛️ Les responsables de club'], ['all', '👥 Tous les membres']], value: 'admins' },
+      { name: 'title', label: 'Titre', required: true, placeholder: 'Ex. : Nouvelle fonction disponible' },
+      { name: 'body', label: 'Message', type: 'textarea', rows: 5, placeholder: 'Ex. : Vous pouvez maintenant créer des groupes de discussion dans Messages.' },
+    ])}
+    <div class="row end mt"><button class="btn primary" id="send">📣 Envoyer l’annonce</button></div></section>`;
+  $('#send', el).onclick = async () => {
+    const v = readForm(el);
+    if (!v.title?.trim()) return toast('Ajoute un titre', 'err');
+    if (!(await confirmBox(`Envoyer « ${v.title} » à ${v.target === 'all' ? 'tous les membres' : 'tous les responsables de club'} ?`, { ok: 'Envoyer', danger: false }))) return;
+    try { const n = await q(sb.rpc('platform_broadcast', { p_title: v.title, p_body: v.body || null, p_target: v.target })); toast(`Annonce envoyée à ${n} personne${n > 1 ? 's' : ''} ✅`); location.hash = '#/admin/home'; }
+    catch (e) { toast(errMsg(e), 'err'); }
+  };
 }
