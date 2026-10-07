@@ -773,3 +773,49 @@ input, select, textarea { border-radius: 14px; }
 @media (prefers-reduced-transparency: reduce) {
   .top-club, .top-actions, .tabbar, .sidebar, .modal { background: var(--card-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
+
+/* =====================================================================
+   NET ET SANS FLOU : aucun effet de flou nulle part, matières pleines
+   ===================================================================== */
+*, *::before, *::after { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+:root { --glass: rgba(255, 255, 255, .96); --glass-strong: #FBFBFD; }
+@media (prefers-color-scheme: dark) { :root { --glass: #24252C; --glass-strong: #1D1E24; } }
+/* le haut : bande unie de la couleur du fond, nette, avec un fin trait quand on défile */
+.topbar::before { inset: 0; opacity: 1 !important; background: var(--bg-solid); border-bottom: .5px solid transparent; transition: border-color .2s; }
+body.scrolled .topbar::before, body[data-depth=detail] .topbar::before { border-bottom-color: var(--sep); }
+.toast { background: var(--glass-strong); }
+.layout::after { display: none; }
+@media (max-width: 900px) { .tabbar { box-shadow: 0 10px 30px -6px rgba(22, 24, 43, .22), 0 0 0 .5px var(--glass-edge), var(--glass-hi); } }
+
+/* =====================================================================
+   CHAQUE PAGE A SON IDENTITÉ : icône, couleur et sous-titre propres
+   ===================================================================== */
+:root { --page: var(--space); }
+body::before { background:
+    radial-gradient(55% 32% at 0% 26%, color-mix(in srgb, var(--page) 20%, transparent), transparent 70%),
+    radial-gradient(45% 30% at 100% 46%, color-mix(in srgb, var(--page) 11%, transparent), transparent 72%),
+    radial-gradient(50% 36% at 70% 98%, color-mix(in srgb, var(--brand) 12%, transparent), transparent 72%),
+    var(--bg-solid) !important; transition: background .4s; }
+.page-head { display: flex; align-items: center; gap: 14px; margin: 2px 0 14px; }
+.page-ico { width: 54px; height: 54px; border-radius: 17px; display: grid; place-items: center; font-size: 27px; flex: none;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--page) 78%, #fff), var(--page));
+  box-shadow: 0 10px 22px -10px color-mix(in srgb, var(--page) 85%, transparent), inset 0 1px 0 rgba(255, 255, 255, .45); }
+.page-head .large-title { margin: 0; line-height: 1.05; }
+.page-sub { margin: 3px 0 0; font-size: .9rem; font-weight: 600; color: color-mix(in srgb, var(--page) 80%, var(--ink)); }
+@media (min-width: 901px) {
+  .large-title-wrap { display: block !important; padding: 0 30px; }
+  .compact-title { opacity: 0 !important; }
+  body.scrolled .compact-title { opacity: 1 !important; }
+}
+.tabbar a.on { color: var(--page) !important; background: color-mix(in srgb, var(--page) 14%, transparent) !important; }
+.sidebar nav a.on { background: var(--page) !important; box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--page) 70%, transparent) !important; }
+.sidebar nav a.on .ic { color: #fff !important; }
+
+/* comptes */
+.acct { display: flex; align-items: flex-start; gap: 12px; padding: 12px 2px; position: relative; }
+.acct + .acct::before { content: ''; position: absolute; top: 0; left: 52px; right: 0; border-top: .5px solid var(--sep); }
+.acct small { display: block; color: var(--muted); }
+.acct .chips { margin-top: 6px; }
+.acct-actions { display: flex; gap: 6px; flex: none; align-self: center; }
+@media (max-width: 560px) { .acct { flex-wrap: wrap; } .acct-actions { width: 100%; padding-left: 52px; } }
+.top-club:focus, .top-actions .icon-btn:focus { outline: none; }

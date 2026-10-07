@@ -3,7 +3,7 @@ import { sb, S, role, sport, SPORTS, KINDS, kindEmoji, esc, $, $$, fmt, toast, m
   errMsg, q, empty, avatar, badge, fullName, toLocalInput, fromLocalInput, upload, applyBrand, ROLE_LABEL, isPremium, downloadCSV, planLimit } from './core.js';
 import { memberName, refreshClubData, setTitle, refreshCounters, loadMemberships, selectClub, installApp, isStandalone, joinWithCode } from './app.js';
 import { groupInvite } from './views3.js';
-import { groupList, deleteClubDialog } from './views4.js';
+import { groupList, deleteClubDialog, editMemberDialog, removeMember, platformUsers, deleteMyAccount } from './views4.js';
 import { actRow, activityForm, loadPlayers, myPlayerIds, inviteDialog, loadActivities } from './views.js';
 
 const startOfDay = (d = new Date()) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
@@ -399,7 +399,7 @@ export async function clubSettings(el) {
     body = `<div class="toolbar"><p class="muted">${S.members.length} membre(s) avec un compte</p><div class="row gap wrap"><button class="btn wa" id="waM">WhatsApp</button><button class="btn primary" id="invM">🔗 Inviter</button></div></div>
       <div class="card">${S.members.map((m) => `<div class="member">${avatar(m.full_name)}<div class="grow"><b>${esc(m.full_name)}</b><small>${esc(m.email || '')}</small>
         <div class="chips">${['admin', 'coach', 'player', 'parent', 'volunteer'].map((r) => `<button class="chip sm ${m.roles.includes(r) ? 'on' : ''}" data-tog="${r}" data-u="${m.id}">${ROLE_LABEL[r]}</button>`).join('')}</div></div>
-        ${m.id !== S.user.id ? `<button class="icon-btn" data-kick="${m.id}" aria-label="Retirer du club">✕</button>` : ''}</div>`).join('')}</div>
+        <div class="acct-actions"><button class="btn sm ghost" data-medit="${m.id}">✏️</button>${m.id !== S.user.id ? `<button class="btn sm ghost danger-text" data-kick="${m.id}" aria-label="Retirer du club">Retirer</button>` : ''}</div></div>`).join('')}</div>
       <div id="invList"></div>`;
   } else if (CT.tab === 'saisons') {
     body = `<div class="toolbar"><p class="muted">Les saisons archivées gardent tout l'historique.</p><button class="btn primary" id="newSeason">＋ Nouvelle saison</button></div>
@@ -461,10 +461,8 @@ export async function clubSettings(el) {
         reload();
       } catch (e) { toast(errMsg(e), 'err'); }
     }));
-    $$('[data-kick]', el).forEach((b) => (b.onclick = async () => {
-      if (!(await confirmBox(`Retirer ${memberName(b.dataset.kick)} du club ? Son compte n'aura plus accès aux données du club.`, { ok: 'Retirer' }))) return;
-      await q(sb.from('memberships').delete().eq('club_id', c.id).eq('user_id', b.dataset.kick)); reload();
-    }));
+    $$('[data-kick]', el).forEach((b) => (b.onclick = () => removeMember(S.members.find((m) => m.id === b.dataset.kick), reload)));
+    $$('[data-medit]', el).forEach((b) => (b.onclick = () => editMemberDialog(S.members.find((m) => m.id === b.dataset.medit), reload)));
     const invs = await q(sb.from('invites').select('*').eq('club_id', c.id).gte('expires_at', new Date().toISOString()).order('created_at', { ascending: false }));
     $('#invList', el).innerHTML = invs.length ? `<h4 class="list-day">Invitations actives</h4><div class="card">${invs.map((i) => `<div class="member"><b class="code">${i.code}</b><div class="grow"><small>${ROLE_LABEL[i.role]}${i.label ? ' · ' + esc(i.label) : ''} · utilisé ${i.uses}/${i.max_uses} · expire ${fmt.date(i.expires_at)}</small></div><button class="icon-btn" data-delinv="${i.id}" aria-label="Supprimer">🗑</button></div>`).join('')}</div>` : '';
     $$('[data-delinv]', el).forEach((b) => (b.onclick = async () => { await q(sb.from('invites').delete().eq('id', b.dataset.delinv)); clubSettings(el); }));
@@ -501,7 +499,8 @@ export async function profile(el) {
       <button class="list-row" id="code">🎟️ <span class="grow">Rejoindre un autre club avec un code</span></button>
       <button class="list-row" id="report">🚩 <span class="grow">Signaler un problème</span></button>
       ${!role.admin() ? '<button class="list-row danger-text" id="leave">🚪 <span class="grow">Quitter ce club</span></button>' : ''}
-      <button class="list-row danger-text" id="logout">⎋ <span class="grow">Se déconnecter</span></button></div>
+      <button class="list-row danger-text" id="logout">⎋ <span class="grow">Se déconnecter</span></button>
+      <button class="list-row danger-text" id="delMe">🗑 <span class="grow">Supprimer mon compte</span></button></div>
       <p class="muted small mt">ClubManager · tes données ne sont visibles que par les membres de ton club.</p></section></div>`;
   $('#saveP', el).onclick = async () => { try { const v = readForm(el); await q(sb.from('profiles').update(v).eq('id', p.id)); Object.assign(S.profile, v); toast('Profil enregistré'); await refreshClubData(); } catch (e) { toast(errMsg(e), 'err'); } };
   $('#inst', el) && ($('#inst', el).onclick = installApp);
@@ -516,6 +515,7 @@ export async function profile(el) {
     await q(sb.from('memberships').delete().eq('club_id', S.club.id).eq('user_id', S.user.id)); localStorage.removeItem('cm_club'); location.hash = '#/'; location.reload();
   });
   $('#logout', el).onclick = () => sb.auth.signOut();
+  $('#delMe', el).onclick = deleteMyAccount;
 }
 
 // ---------------------------------------------------------------- super admin
@@ -581,7 +581,8 @@ export async function superAdmin(el, tab) {
       <td><button class="btn sm ${c.status === 'active' ? 'ghost' : 'danger'}" data-sus="${c.id}" data-st="${c.status}">${c.status === 'active' ? '🟢 Actif' : '⛔ Suspendu'}</button></td>
       <td><div class="row gap"><button class="btn sm primary" data-manage="${c.id}">Gérer</button><button class="btn sm ghost" data-invadm="${c.id}" data-name="${esc(c.name)}" title="Nouveau lien administrateur">🔗</button><button class="btn sm ghost danger-text" data-delclub="${c.id}" data-name="${esc(c.name)}" aria-label="Supprimer">🗑</button></div></td></tr>`).join('')}</tbody></table></div></div>`
       : empty('🏟️', 'Aucun club', 'Valide une demande d’inscription ou crée un club toi-même.')}`;
-  else if (SA.tab === 'users') body = `<div class="card table-card"><div class="table-wrap"><table class="table"><thead><tr><th>Nom</th><th>Email</th><th>Clubs</th><th>Inscrit</th></tr></thead>
+  else if (SA.tab === 'users') { el.innerHTML = '<div id="pfUsers"></div>'; return platformUsers($('#pfUsers', el)); }
+  else if (SA.tab === 'users_old') body = `<div class="card table-card"><div class="table-wrap"><table class="table"><thead><tr><th>Nom</th><th>Email</th><th>Clubs</th><th>Inscrit</th></tr></thead>
     <tbody>${o.user_list.map((u) => `<tr><td>${esc(u.full_name || '')}${u.super ? ' 🛡️' : ''}</td><td>${esc(u.email || '')}</td><td>${u.clubs}</td><td>${fmt.date(u.created_at)}</td></tr>`).join('')}</tbody></table></div></div>`;
   else if (SA.tab === 'reports') body = o.reports.length ? `<div class="card">${o.reports.map((r) => `<div class="member"><span class="emoji-box">${r.status === 'open' ? '🚩' : '✅'}</span><div class="grow"><b>${esc(r.club || 'Plateforme')}</b><p class="pre">${esc(r.reason)}</p><small>${fmt.rel(r.created_at)}</small></div>
     ${r.status === 'open' ? `<button class="btn sm ghost" data-close="${r.id}">Clore</button>` : ''}</div>`).join('')}</div>` : empty('✅', 'Aucun signalement');

@@ -224,3 +224,91 @@ export function deleteClubDialog(club, after) {
       if (after) { await loadMemberships(); after(); } else setTimeout(() => location.replace(location.pathname), 600);
     } }] });
 }
+
+// ---------------------------------------------------------------- gestion des comptes
+const missingFn = (e) => /Could not find the function|PGRST202|does not exist/i.test(e?.message || '');
+const NOT_READY = 'Cette action doit d’abord être activée dans la base (voir le message de Claude).';
+
+// Modifier un membre du club (administrateur du club)
+export function editMemberDialog(m, after) {
+  modal({ title: `Modifier ${m.full_name || 'ce membre'}`, body: formHTML([
+      { name: 'full_name', label: 'Prénom et nom', required: true, value: m.full_name },
+      { name: 'phone', label: 'Téléphone', type: 'tel', value: m.phone || '' },
+    ]) + `<p class="muted small">Email : ${esc(m.email || '—')} · seul le membre (ou l’administrateur de la plateforme) peut changer son email.</p>`,
+    actions: [{ label: 'Annuler', cls: 'ghost' }, { label: 'Enregistrer', cls: 'primary', run: async (w) => {
+      const v = readForm(w);
+      await q(sb.rpc('club_update_member', { p_club: S.club.id, p_user: m.id, p_full_name: v.full_name, p_phone: v.phone }));
+      toast('Membre modifié'); after?.();
+    } }] });
+}
+// Retirer un membre du club
+export async function removeMember(m, after) {
+  if (!(await confirmBox(`Retirer ${m.full_name || 'ce membre'} du club ? Son compte n’aura plus accès aux données du club (il n’est pas supprimé).`, { ok: 'Retirer du club' }))) return;
+  try {
+    try { await q(sb.rpc('club_remove_member', { p_club: S.club.id, p_user: m.id })); }
+    catch (e) { if (!missingFn(e)) throw e; await q(sb.from('memberships').delete().eq('club_id', S.club.id).eq('user_id', m.id)); }
+    toast('Membre retiré du club'); after?.();
+  } catch (e) { toast(errMsg(e), 'err'); }
+}
+
+// Comptes de la plateforme (administrateur ClubManager)
+const UA = { search: '' };
+export async function platformUsers(el) {
+  const [profiles, mems, clubs] = await Promise.all([
+    q(sb.from('profiles').select('*').order('created_at', { ascending: false }).limit(1000)),
+    q(sb.from('memberships').select('user_id, club_id, role')),
+    q(sb.from('clubs').select('id, name')),
+  ]);
+  const clubName = (id) => clubs.find((c) => c.id === id)?.name || '';
+  const s = UA.search.toLowerCase().trim();
+  const list = profiles.filter((p) => !s || `${p.full_name} ${p.email} ${p.phone || ''}`.toLowerCase().includes(s));
+  const rolesOf = (id) => { const by = {}; mems.filter((m) => m.user_id === id).forEach((m) => (by[m.club_id] = [...(by[m.club_id] || []), ROLE_LABEL[m.role]])); return Object.entries(by); };
+  el.innerHTML = `<div class="toolbar"><input type="search" id="uq" placeholder="Rechercher un nom, un email, un téléphone" value="${esc(UA.search)}" aria-label="Rechercher"><p class="muted">${list.length} compte${list.length > 1 ? 's' : ''}</p></div>
+    ${list.length ? `<div class="card list">${list.map((p) => { const r = rolesOf(p.id); return `<div class="acct">
+      ${avatar(p.full_name)}<div class="grow"><b>${esc(p.full_name || 'Sans nom')}${p.is_super_admin ? ' <span class="badge" style="--b:#0891B2">🛡️ Admin plateforme</span>' : ''}${p.id === S.user.id ? ' <span class="muted small">(toi)</span>' : ''}</b>
+        <small>${esc(p.email || '')}${p.phone ? ' · ' + esc(p.phone) : ''} · inscrit ${fmt.date(p.created_at)}</small>
+        <div class="chips">${r.length ? r.map(([cid, rl]) => `<span class="chip sm">${esc(clubName(cid))} · ${rl.join(', ')}</span>`).join('') : '<span class="muted small">Aucun club</span>'}</div></div>
+      <div class="acct-actions"><button class="btn sm ghost" data-edit="${p.id}">✏️ Modifier</button>${p.id !== S.user.id ? `<button class="btn sm ghost danger-text" data-del="${p.id}">🗑</button>` : ''}</div></div>`; }).join('')}</div>`
+      : empty('👥', 'Aucun compte trouvé')}`;
+  const reload = () => platformUsers(el);
+  let t; $('#uq', el).oninput = (e) => { clearTimeout(t); t = setTimeout(() => { UA.search = e.target.value; reload().then(() => { const i = $('#uq', el); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }); }, 300); };
+  $$('[data-edit]', el).forEach((b) => (b.onclick = () => { const p = profiles.find((x) => x.id === b.dataset.edit);
+    modal({ title: 'Modifier le compte', body: formHTML([
+        { name: 'full_name', label: 'Prénom et nom', required: true, value: p.full_name },
+        { name: 'email', label: 'Email de connexion', type: 'email', required: true, value: p.email },
+        { name: 'phone', label: 'Téléphone', type: 'tel', value: p.phone || '' },
+        { name: 'is_super_admin', label: '🛡️ Administrateur de la plateforme (accès à tous les clubs)', type: 'checkbox', value: p.is_super_admin },
+      ]) + '<button class="btn ghost block mt" id="resetPwd">🔑 Envoyer un lien pour choisir un nouveau mot de passe</button>',
+      actions: [{ label: 'Annuler', cls: 'ghost' }, { label: 'Enregistrer', cls: 'primary', run: async (w) => {
+        const v = readForm(w);
+        await q(sb.rpc('admin_update_user', { p_user: p.id, p_full_name: v.full_name, p_phone: v.phone, p_email: v.email, p_super: !!v.is_super_admin }));
+        if (p.id === S.user.id) Object.assign(S.profile, { full_name: v.full_name, phone: v.phone });
+        toast('Compte modifié'); reload();
+      } }],
+      onOpen: (w) => ($('#resetPwd', w).onclick = async () => {
+        const { error } = await sb.auth.resetPasswordForEmail(p.email, { redirectTo: location.origin + location.pathname });
+        toast(error ? errMsg(error) : `Lien envoyé à ${p.email}`, error ? 'err' : 'ok');
+      }) });
+  }));
+  $$('[data-del]', el).forEach((b) => (b.onclick = () => { const p = profiles.find((x) => x.id === b.dataset.del);
+    modal({ title: 'Supprimer ce compte', body: `<p class="lead">Le compte de <b>${esc(p.full_name || p.email)}</b> sera supprimé définitivement : il ne pourra plus se connecter et sera retiré de tous ses clubs. Les données des clubs (joueurs, matchs…) sont conservées.</p>
+      ${formHTML([{ name: 'confirm', label: 'Pour confirmer, écris SUPPRIMER', required: true }])}`,
+      actions: [{ label: 'Annuler', cls: 'ghost' }, { label: 'Supprimer le compte', cls: 'danger', run: async (w) => {
+        if (readForm(w).confirm.trim().toUpperCase() !== 'SUPPRIMER') throw new Error('Écris SUPPRIMER pour confirmer');
+        try { await q(sb.rpc('admin_delete_user', { p_user: p.id })); } catch (e) { throw new Error(missingFn(e) ? NOT_READY : errMsg(e)); }
+        toast('Compte supprimé'); reload();
+      } }] });
+  }));
+}
+
+// Supprimer mon propre compte
+export function deleteMyAccount() {
+  modal({ title: 'Supprimer mon compte', body: `<p class="lead">Ton compte sera supprimé définitivement : tu ne pourras plus te connecter et tu seras retiré de tous tes clubs. <b>Impossible de revenir en arrière.</b></p>
+    ${formHTML([{ name: 'confirm', label: 'Pour confirmer, écris SUPPRIMER', required: true }])}`,
+    actions: [{ label: 'Annuler', cls: 'ghost' }, { label: 'Supprimer mon compte', cls: 'danger', run: async (w) => {
+      if (readForm(w).confirm.trim().toUpperCase() !== 'SUPPRIMER') throw new Error('Écris SUPPRIMER pour confirmer');
+      try { await q(sb.rpc('delete_my_account')); } catch (e) { throw new Error(missingFn(e) ? NOT_READY : errMsg(e)); }
+      try { localStorage.clear(); } catch {}
+      await sb.auth.signOut(); toast('Ton compte a été supprimé'); setTimeout(() => location.replace(location.pathname), 500);
+    } }] });
+}

@@ -72,6 +72,29 @@ const navFor = () => {
   if (sp.only) list.sort((x, y) => sp.only.indexOf(x.r) - sp.only.indexOf(y.r));
   return list.map((n) => (sp.labels[n.r] ? { ...n, label: sp.labels[n.r][0], short: sp.labels[n.r][1] } : n));
 };
+// identité de chaque page : icône, couleur, sous-titre
+const PAGES = {
+  calendrier: ['📅', '#0A84FF', 'Tous les rendez-vous du club'],
+  activites: ['🏀', '#22A559', 'Entraînements, matchs et convocations'],
+  equipes: ['🛡️', '#7C3AED', 'Les équipes de la saison'],
+  joueurs: ['🏃', '#0EA5A4', 'Licenciés, licences et fiches'],
+  familles: ['👨‍👩‍👧', '#F97316', 'Parents, enfants et contacts'],
+  evenements: ['🎉', '#EC4899', 'Tournois, fêtes et sorties'],
+  organisation: ['✅', '#F59E0B', 'Tâches et préparation'],
+  benevoles: ['🙋', '#EF4444', 'Missions et coups de main'],
+  messages: ['💬', '#2563EB', 'Groupes, messages et annonces'],
+  documents: ['📁', '#64748B', 'Licences, certificats et règlements'],
+  cotisations: ['💶', '#059669', 'Paiements et relances'],
+  stats: ['📊', '#8B5CF6', 'Résultats et chiffres clés'],
+  club: ['⚙️', '#475569', 'Infos, membres, saisons et offre'],
+  profil: ['👤', '#DB2777', 'Ton compte et tes réglages'],
+  'admin/apps': ['📥', '#0891B2', 'Les clubs qui veulent rejoindre ClubManager'],
+  'admin/clubs': ['🏟️', '#0E7490', 'Tous les clubs de la plateforme'],
+  'admin/users': ['👥', '#4F46E5', 'Modifier ou supprimer les comptes'],
+  'admin/reports': ['🚩', '#DC2626', 'Problèmes signalés par les membres'],
+  'admin/log': ['📈', '#0D9488', 'Dernières actions sur la plateforme'],
+  'admin/settings': ['🔧', '#475569', 'Réglages de la plateforme'],
+};
 const tabsFor = () => (S.space === 'platform' ? ['admin/apps', 'admin/clubs', 'admin/users', 'admin/settings'] : (SPACE_NAV[S.space] || SPACE_NAV.parent).tabs);
 
 const ROUTES = [
@@ -510,7 +533,7 @@ function shell() {
         </div>
       </header>
       <div class="ptr" id="ptr" aria-hidden="true"><span></span></div>
-      <div class="large-title-wrap"><h1 id="largeTitle" class="large-title"></h1></div>
+      <div class="large-title-wrap"><div class="page-head"><span class="page-ico" id="pageIco" aria-hidden="true"></span><div><h1 id="largeTitle" class="large-title"></h1><p class="page-sub" id="pageSub"></p></div></div></div>
       <main id="view" tabindex="-1"></main>
     </div>
     <nav class="tabbar" aria-label="Navigation principale">${items.filter((n) => mobileMain.includes(n.r)).map((n) => `<a href="#/${n.r}" data-r="${n.r}">${icon(n.icon)}<span>${n.short || n.label}</span>${n.r === 'messages' ? '<i class="dot" data-unread hidden></i>' : ''}</a>`).join('')}
@@ -604,6 +627,11 @@ export async function route(silent = false) {
   $$('[data-r]').forEach((a) => a.classList.toggle('on', a.dataset.r === path || a.dataset.r === top || (top === 'activite' && a.dataset.r === 'activites') || (top === 'equipe' && a.dataset.r === 'equipes') || (top === 'groupe' && a.dataset.r === 'messages')));
   const nav = navFor().find((n) => n.r === path) || navFor().find((n) => n.r === top) || NAV.find((n) => n.r === top);
   setTitle(top === '' ? (SPACES[S.space]?.label || 'Accueil') : (innerWidth < 900 && nav?.short) || nav?.label || '');
+  const sp = SPACES[S.space] || SPACES.parent;
+  const pg = top === '' ? [sp.emoji, sp.color, S.club?.name || sp.hello] : PAGES[path] || PAGES[top] || [sp.emoji, sp.color, ''];
+  document.documentElement.style.setProperty('--page', pg[1]);
+  document.body.dataset.page = top || 'accueil';
+  if ($('#pageIco')) { $('#pageIco').textContent = pg[0]; $('#pageSub').textContent = pg[2]; }
   if (!silent) { view.innerHTML = SKELETON; window.scrollTo(0, 0); }
   try { await fn(view, ...params); }
   catch (e) { console.error(e); view.innerHTML = `<div class="empty"><div class="empty-emoji">⚠️</div><h3>Impossible d'afficher cette page</h3><p>${esc(errMsg(e))}</p><button class="btn ghost" onclick="location.reload()">Recharger</button></div>`; }
