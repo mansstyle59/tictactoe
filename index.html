@@ -618,18 +618,6 @@ main,.sec{scroll-padding-bottom:110px}body{padding-bottom:calc(96px + env(safe-a
 
   <!-- ===== Machine ===== -->
   <main id="viewMach" class="sec" hidden style="gap:18px">
-    <div class="card mhero">
-      <div class="lens"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h2.5l1.5-2.5h8L17.5 8H20v11H4z"/><circle cx="12" cy="13.2" r="3.4"/></svg></div>
-      <h2>Quelle machine as-tu devant toi ?</h2>
-      <p class="note" style="margin:0;max-width:36ch">Prends-la en photo : l'IA la reconnaît, te dit comment la régler et te montre les exercices en animation.</p>
-      <div class="mbtns">
-        <label class="mbtn pri">Prendre une photo<input type="file" id="camIn" accept="image/*" capture="environment"></label>
-        <label class="mbtn sec2">Galerie<input type="file" id="galIn" accept="image/*" multiple></label>
-      </div>
-      <label class="mctx" for="mctx"><span class="label" style="padding:0">Une précision ? (facultatif)</span>
-        <input id="mctx" type="text" maxlength="300" placeholder="Ex. : je débute, j'ai mal au genou…" autocomplete="off"></label>
-      <ul class="mtips"><li>Cadre la machine entière, de côté</li><li>Inclus la plaque d'instructions si elle est visible</li><li>Jusqu'à 3 photos depuis la galerie</li></ul>
-    </div>
     <div id="mout" class="sec" style="gap:14px"></div>
     <section id="mscans" class="sec" style="gap:10px"></section>
     <section id="mcat" class="sec" style="gap:12px"></section>
@@ -641,7 +629,7 @@ main,.sec{scroll-padding-bottom:110px}body{padding-bottom:calc(96px + env(safe-a
 
 <nav class="tabbar" id="tabs" aria-label="Navigation">
   <button id="tabPlan" aria-pressed="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 7v10M18 7v10M3 9.5v5M21 9.5v5M6 12h12"/></svg><span>Aujourd'hui</span></button>
-  <button id="tabMach" aria-pressed="false"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h2.5l1.5-2.5h8L17.5 8H20v11H4z"/><circle cx="12" cy="13.2" r="3.4"/></svg><span>Machine</span></button>
+  <button id="tabMach" aria-pressed="false"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16M8 20V4h8v16M8 8h8M8 12h8M8 16h8"/></svg><span>Machine</span></button>
   <button id="tabProg" aria-pressed="false"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Progrès</span></button>
   <button id="tabMe" aria-pressed="false"><span class="tabav" id="tabAv">?</span><span>Profil</span></button>
 </nav>
@@ -1650,7 +1638,7 @@ let MCH={ctl:null};
 const AIEX={};
 function initMachine(){
   const go=e=>{const fs=[...(e.target.files||[])].slice(0,3);e.target.value="";if(fs.length)analyse(fs)};
-  $("#camIn").onchange=go;$("#galIn").onchange=go;renderScans();renderCatalog();
+  renderScans();renderCatalog();
 }
 async function thumbOf(file){try{const bm=await createImageBitmap(file);const s=Math.min(1,200/Math.max(bm.width,bm.height));const c=document.createElement("canvas");c.width=Math.round(bm.width*s);c.height=Math.round(bm.height*s);c.getContext("2d").drawImage(bm,0,0,c.width,c.height);return c.toDataURL("image/jpeg",.62)}catch(e){return ""}}
 function errMsg(e){const c=e&&e.code;return c==="not_granted"?"Tu as refusé l'accès à l'IA. Recharge la page et accepte pour analyser tes photos.":c==="rate_limited"?"Trop de demandes d'un coup. Réessaie dans une minute.":c==="image_rejected"?"Cette photo n'a pas pu être lue. Essaie une autre photo, en JPEG ou PNG.":c==="cancelled"?"Analyse annulée.":"L'analyse n'a pas abouti. Vérifie ta connexion et réessaie."}
@@ -2259,7 +2247,7 @@ let TAB="plan";
 function greet(){const h=new Date().getHours();return h<5?"Bonne nuit":h<12?"Bonjour":h<18?"Bon après-midi":"Bonsoir"}
 function renderToday(){const d=new Date(),jour=JOURL[d.getDay()].replace(/^./,c=>c.toUpperCase()),dt=d.getDate()+" "+MOISL[d.getMonth()]+" "+d.getFullYear();
   $("#today").textContent=TAB==="plan"?jour:jour+" "+dt;
-  const T={plan:[dt,""],mach:["Machines","Reconnais un appareil et apprends à l'utiliser"],prog:["Progrès","Ta régularité, tes badges et tes records"]}[TAB];
+  const T={plan:[dt,""],mach:["Machines","Apprends à utiliser chaque appareil"],prog:["Progrès","Ta régularité, tes badges et tes records"]}[TAB];
   $("#tabSub").hidden=!T[1];
   $("#ltitle").textContent=T[0];$("#tabSub").textContent=T[1];$("#navTitle").textContent=TAB==="plan"?"Coach IA":T[0];$("#hdrLogo").src=LOGO}
 renderToday();
