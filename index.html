@@ -543,6 +543,13 @@ header.top{padding-top:10px}
 .sect{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:6px 4px 0}
 .cset2{border-radius:16px;background:var(--glass);padding:4px 14px}.cset2 summary{padding:12px 0;font-weight:600;font-size:15px;color:var(--accent)}.cset2 .aform{padding-bottom:12px}
 .authcard.pm{grid-template-columns:minmax(0,1fr)}.pstats{grid-template-columns:repeat(4,minmax(0,1fr))}.pstats b{font-size:15px}
+
+/* cohérence avec le logo : silhouette claire, bleu / cyan / violet */
+:root{--skin:#7C97FF;--shirt:#1F4BFF;--shorts:#1B2A6B;--shoe:#FFFFFF;--hair:#1B2A6B;--hl:#19C3FF}
+:root[data-theme="dark"]{--skin:#DCE6FF;--shirt:#5C86FF;--shorts:#23327E;--shoe:#FFFFFF;--hair:#C9D6FF;--hl:#5CE1FF}
+.hero,.xcard,.pmotion,.player{--skin:#F1F5FF;--shirt:#FFFFFF;--shorts:#3550D6;--shoe:#FFFFFF;--hair:#D5E0FF;--hl:#7FEFFF}
+.gbtn.home{background:linear-gradient(145deg,#19C2FF,#1F4BFF)}.gbtn.gym{background:linear-gradient(145deg,#1F4BFF,#8A2BFF)}
+.tipi{background:linear-gradient(140deg,#19C2FF,#1F4BFF)}
 </style>
 </head>
 <body>
@@ -1832,17 +1839,17 @@ applyTheme(THEME);
 $("#thmBtn").onclick=$("#thmBtn2").onclick=()=>applyTheme(THM[THEME].next,true);
 /* ---------- accueil ---------- */
 const EXPRESS=[
- {t:"Abdos express",m:10,g:["abdos"],p:"home",c:["#FF9F0A","#FF375F"],mv:"crunch",hl:["abs"]},
- {t:"Brûle-graisse",m:15,g:["cardio","abdos"],p:"home",c:["#FF453A","#FF9F0A"],mv:"jacks",hl:["thigh","shin"]},
- {t:"Haut du corps",m:25,g:["pecs","dos","epaules","bras"],p:"home",c:["#0A84FF","#5E5CE6"],mv:"pushup",hl:["chest","ua"]},
- {t:"Jambes & fessiers",m:30,g:["jambes","fessiers"],p:"home",c:["#30D158","#0E9F87"],mv:"squat",hl:["thigh","glute"]},
- {t:"Corps entier",m:45,g:["pecs","dos","jambes","fessiers","abdos"],p:"home",c:["#5E5CE6","#BF5AF2"],mv:"burpee",hl:[]},
- {t:"Salle : force",m:60,g:["pecs","dos","jambes"],p:"gym",c:["#0A84FF","#64D2FF"],mv:"legpress",gear:"legpress",hl:["thigh"]},
- {t:"Pecs & triceps",m:45,g:["pecs","bras"],p:"gym",c:["#FF453A","#FF9F0A"],mv:"seatpress",gear:"seat_handles",hl:["chest","ua"]},
- {t:"Dos & biceps",m:45,g:["dos","bras"],p:"gym",c:["#30D158","#0E9F87"],mv:"pulldown",gear:"pulldown",hl:["back","ua"]},
- {t:"Jambes & fessiers",m:50,g:["jambes","fessiers"],p:"gym",c:["#5E5CE6","#BF5AF2"],mv:"hipthrust",gear:"",hl:["thigh","glute"]},
- {t:"Cardio salle",m:30,g:["cardio","abdos"],p:"gym",c:["#FF375F","#FF9F0A"],mv:"run",gear:"treadmill",hl:["thigh","shin"]},
- {t:"Épaules & abdos",m:35,g:["epaules","abdos"],p:"gym",c:["#0A84FF","#5E5CE6"],mv:"seatpress",gear:"seat_handles",hl:["sh","abs"]}];
+ {t:"Abdos express",m:10,g:["abdos"],p:"home",c:["#19C2FF","#1F4BFF"],mv:"crunch",hl:["abs"]},
+ {t:"Brûle-graisse",m:15,g:["cardio","abdos"],p:"home",c:["#1F4BFF","#8A2BFF"],mv:"jacks",hl:["thigh","shin"]},
+ {t:"Haut du corps",m:25,g:["pecs","dos","epaules","bras"],p:"home",c:["#12A4F0","#5E3BFF"],mv:"pushup",hl:["chest","ua"]},
+ {t:"Jambes & fessiers",m:30,g:["jambes","fessiers"],p:"home",c:["#1F4BFF","#19C2FF"],mv:"squat",hl:["thigh","glute"]},
+ {t:"Corps entier",m:45,g:["pecs","dos","jambes","fessiers","abdos"],p:"home",c:["#5E3BFF","#8A2BFF"],mv:"burpee",hl:[]},
+ {t:"Salle : force",m:60,g:["pecs","dos","jambes"],p:"gym",c:["#0A84FF","#6A3DF0"],mv:"legpress",gear:"legpress",hl:["thigh"]},
+ {t:"Pecs & triceps",m:45,g:["pecs","bras"],p:"gym",c:["#19C2FF","#1F4BFF"],mv:"seatpress",gear:"seat_handles",hl:["chest","ua"]},
+ {t:"Dos & biceps",m:45,g:["dos","bras"],p:"gym",c:["#1F4BFF","#8A2BFF"],mv:"pulldown",gear:"pulldown",hl:["back","ua"]},
+ {t:"Jambes & fessiers",m:50,g:["jambes","fessiers"],p:"gym",c:["#12A4F0","#5E3BFF"],mv:"hipthrust",gear:"",hl:["thigh","glute"]},
+ {t:"Cardio salle",m:30,g:["cardio","abdos"],p:"gym",c:["#1F4BFF","#19C2FF"],mv:"run",gear:"treadmill",hl:["thigh","shin"]},
+ {t:"Épaules & abdos",m:35,g:["epaules","abdos"],p:"gym",c:["#5E3BFF","#8A2BFF"],mv:"seatpress",gear:"seat_handles",hl:["sh","abs"]}];
 const ICO={fire:'<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2c1 3.5-1.5 5-1.5 7.5 0 1.4 1 2.5 2.3 2.5 1.5 0 2.2-1.3 2.2-2.6 2 1.6 3 3.8 3 6.1A6 6 0 0 1 6 15.5C6 10.5 11 8 12 2z"/></svg>',
  clock:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'};
 function relDay(d){const a=new Date();a.setHours(0,0,0,0);const b=new Date(d);b.setHours(0,0,0,0);const n=Math.round((a-b)/864e5);return n<=0?"Aujourd'hui":n===1?"Hier":"Il y a "+n+" jours"}
