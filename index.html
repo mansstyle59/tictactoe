@@ -362,7 +362,7 @@ input[type=range]::-webkit-slider-thumb{margin-top:-13px;width:28px;height:28px;
 .tip{background:var(--glass);border-radius:14px}
 .authcard{background:var(--sheetbg);box-shadow:0 20px 60px rgba(0,0,0,.25)}
 .gbtn{display:grid;justify-items:center;gap:4px;padding:22px 16px;border:0;border-radius:24px;color:#fff;text-align:center;cursor:pointer;position:relative;box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 12px 28px rgba(0,0,0,.22);transition:transform .15s}
-.gbtn:active{transform:scale(.97)}.gbtn b{font-size:21px;font-weight:800}.gbtn small{font-size:13px;opacity:.9;line-height:1.35}
+.memo{display:grid;gap:8px;padding:14px;border-radius:18px;background:var(--accent-soft)}.memo b{font-size:15px}.memo span,.memo small{font-size:13px;color:var(--muted);line-height:1.4}.gbtn:active{transform:scale(.97)}.gbtn b{font-size:21px;font-weight:800}.gbtn small{font-size:13px;opacity:.9;line-height:1.35}
 .gbtn.home{background:linear-gradient(145deg,#30D158,#0E9F87)}.gbtn.gym{background:linear-gradient(145deg,#0A84FF,#5E5CE6)}
 .gbtn.last::after{content:"Dernier choix";position:absolute;top:10px;right:12px;font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:99px;background:rgba(255,255,255,.25)}
 .psel{background:var(--glass);border:1.5px solid transparent;border-radius:14px}
@@ -1055,7 +1055,23 @@ const PRESETS=[["Haut du corps",["pecs","dos","epaules","bras"]],["Bas du corps"
 const LV={1:{n:"Débutant",sets:2,rest:75,rm:.75,tm:.75},2:{n:"Intermédiaire",sets:3,rest:60,rm:1,tm:1},3:{n:"Confirmé",sets:4,rest:45,rm:1.25,tm:1.3}};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const ls={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+/* mémoire durable : localStorage + copie IndexedDB (restaurée automatiquement si le navigateur efface l'une des deux) */
+const IDBM={p:null,open(){return this.p||(this.p=new Promise(r=>{try{const q=indexedDB.open("coach-ia",1);q.onupgradeneeded=()=>q.result.createObjectStore("kv");q.onsuccess=()=>r(q.result);q.onerror=()=>r(null);q.onblocked=()=>r(null)}catch(e){r(null)}}))},
+ async all(){const d=await this.open();if(!d)return{};return new Promise(r=>{try{const o={},c=d.transaction("kv").objectStore("kv").openCursor();c.onsuccess=()=>{const x=c.result;if(x){o[x.key]=x.value;x.continue()}else r(o)};c.onerror=()=>r({})}catch(e){r({})}})},
+ async put(k,v){const d=await this.open();if(!d)return;try{d.transaction("kv","readwrite").objectStore("kv").put(v,k)}catch(e){}}};
+const ls={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){const s=JSON.stringify(v);try{localStorage.setItem(k,s)}catch(e){}if(k.startsWith("cd-"))IDBM.put(k,s)}};
+async function restoreMem(){
+  try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+  try{const m=await Promise.race([IDBM.all(),new Promise(r=>setTimeout(()=>r({}),1500))]);
+    for(const k in m){if(k.startsWith("cd-")&&localStorage.getItem(k)===null){try{localStorage.setItem(k,m[k])}catch(e){}}}
+    for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith("cd-")&&!(k in m))IDBM.put(k,localStorage.getItem(k))}}catch(e){}
+}
+function backupData(){const o={app:"coach-ia",v:1,date:new Date().toISOString(),data:{}};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith("cd-"))o.data[k]=localStorage.getItem(k)}return o}
+async function exportBackup(){const txt=JSON.stringify(backupData()),name="coach-ia-sauvegarde-"+new Date().toISOString().slice(0,10)+".json";let f;
+  try{f=new File([txt],name,{type:"application/json"});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:"Sauvegarde Coach IA"});toast("Sauvegarde prête");return}}catch(e){if(e&&e.name==="AbortError")return}
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type:"application/json"}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);toast("Sauvegarde téléchargée")}
+function importBackup(file){if(!file)return;file.text().then(t=>{const o=JSON.parse(t);if(o.app!=="coach-ia"||!o.data)throw 0;
+  Object.keys(o.data).forEach(k=>{if(k.startsWith("cd-")){try{localStorage.setItem(k,o.data[k])}catch(e){}IDBM.put(k,o.data[k])}});toast("Progression restaurée");setTimeout(()=>location.reload(),800)}).catch(()=>toast("Fichier non valide"))}
 
 let S=Object.assign({mins:45,groups:["pecs","dos","jambes","fessiers","abdos"],lvl:2,eq:0,place:"home"},ls.get("cd-set",{}));
 let seed=Math.floor(Math.random()*1e9), PLAN=null;
@@ -1612,11 +1628,15 @@ function openProfiles(){
       <span class="prow2"><input id="pmNew" maxlength="20" placeholder="Pseudo, ex. : Liana" autocomplete="off"><button class="small-btn pri" type="submit">Ajouter</button></span></label></form>
     <p class="err" id="pmErr" hidden></p>
     ${PROFS.length>1?`<div id="pmDelBox"><button class="small-btn" id="pmDel" type="button">Supprimer le profil « ${esc(ME.pseudo)} »</button></div>`:""}
-    <p class="note" style="margin:0;padding:0">Les profils, les séances et les machines sont enregistrés sur cet appareil.</p>
+    <div class="memo"><b>✓ Progression mémorisée</b><span>Tu restes connecté sur cet appareil : profils, séances, badges et machines sont gardés automatiquement, sans mot de passe.</span>
+      <span class="prow2"><button class="small-btn pri" id="bkExp" type="button">Sauvegarder</button><button class="small-btn" id="bkImp" type="button">Restaurer</button></span>
+      <input type="file" id="bkFile" accept="application/json,.json" hidden>
+      <small>Astuce iPhone : ajoute l'appli à l'écran d'accueil pour garder tes données plus longtemps, et sauvegarde de temps en temps pour changer de téléphone.</small></div>
     <div class="about"><img class="logo" src="${LOGO}" alt=""><span><b>Coach IA</b><br>Version 1.0</span></div>
   </div>`;
   const err=m=>{$("#pmErr").textContent=m;$("#pmErr").hidden=false};
   const check=(n,self)=>n.length<2?"Le pseudo doit faire au moins 2 caractères.":PROFS.some(p=>p.id!==self&&p.pseudo.toLowerCase()===n.toLowerCase())?"Ce pseudo existe déjà.":"";
+  $("#bkExp").onclick=exportBackup;$("#bkImp").onclick=()=>$("#bkFile").click();$("#bkFile").onchange=ev=>{const f=ev.target.files[0];if(f&&confirm("Restaurer cette sauvegarde ? Elle remplace les données actuelles de cet appareil."))importBackup(f)};
   $("#pmX").onclick=closeProfiles;a.onclick=ev=>{if(ev.target===a)closeProfiles()};
   a.querySelectorAll(".psel").forEach(b=>b.onclick=()=>{const p=PROFS.find(x=>x.id===b.dataset.id);closeProfiles();if(p.id!==ME.id)useProfile(p)});
   $("#pmRen").onsubmit=ev=>{ev.preventDefault();const n=$("#pmName").value.trim(),e=check(n,ME.id);if(e)return err(e);
@@ -1842,7 +1862,7 @@ function renderToday(){const d=new Date(),jour=JOURL[d.getDay()].replace(/^./,c=
   $("#tabSub").hidden=!T[1];
   $("#ltitle").textContent=T[0];$("#tabSub").textContent=T[1];$("#navTitle").textContent=TAB==="plan"?"Coach IA":T[0];$("#hdrLogo").src=LOGO}
 renderToday();
-try{initMachine()}catch(e){}boot();
+restoreMem().then(()=>{try{initMachine()}catch(e){}boot()});
 </script>
 
 </body>
