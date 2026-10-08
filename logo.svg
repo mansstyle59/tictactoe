@@ -1,17 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
 <defs>
-<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3D9BFF"/><stop offset=".5" stop-color="#4C4DF5"/><stop offset="1" stop-color="#8A3FFC"/></linearGradient>
-<radialGradient id="gl" cx=".25" cy=".12" r=".9"><stop offset="0" stop-color="#fff" stop-opacity=".5"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/></radialGradient>
-<radialGradient id="dp" cx=".9" cy=".98" r=".75"><stop offset="0" stop-color="#14085E" stop-opacity=".5"/><stop offset="1" stop-color="#14085E" stop-opacity="0"/></radialGradient>
-<linearGradient id="ring" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#D6E0FF"/></linearGradient>
-<linearGradient id="db" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7FF0FF"/><stop offset="1" stop-color="#2FD2F5"/></linearGradient>
-<filter id="sh" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="20" stdDeviation="22" flood-color="#150A66" flood-opacity=".45"/></filter>
+<linearGradient id="bg" x1=".1" y1="0" x2=".9" y2="1"><stop offset="0" stop-color="#46A6FF"/><stop offset=".48" stop-color="#4A48F2"/><stop offset="1" stop-color="#7B2FF0"/></linearGradient>
+<radialGradient id="gl" cx=".22" cy=".08" r=".85"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".5" stop-color="#fff" stop-opacity=".08"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+<radialGradient id="dp" cx=".92" cy="1" r=".8"><stop offset="0" stop-color="#12064F" stop-opacity=".6"/><stop offset="1" stop-color="#12064F" stop-opacity="0"/></radialGradient>
+<radialGradient id="halo" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#9CE7FF" stop-opacity=".35"/><stop offset="1" stop-color="#9CE7FF" stop-opacity="0"/></radialGradient>
+<linearGradient id="ring" gradientUnits="userSpaceOnUse" x1="260" y1="200" x2="640" y2="860"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".6" stop-color="#E9EEFF"/><stop offset="1" stop-color="#BFCBFF"/></linearGradient>
+<linearGradient id="ringHi" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient>
+<linearGradient id="steel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A8F4FF"/><stop offset=".45" stop-color="#37D6F7"/><stop offset="1" stop-color="#119FD8"/></linearGradient>
+<linearGradient id="spark" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#CFF4FF"/></linearGradient>
+<filter id="sh" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="22" stdDeviation="20" flood-color="#0F0552" flood-opacity=".5"/></filter>
+<filter id="sh2" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#06527A" flood-opacity=".45"/></filter>
+<filter id="gw" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="14"/></filter>
 </defs>
 <rect width="1024" height="1024" fill="url(#bg)"/><rect width="1024" height="1024" fill="url(#dp)"/><rect width="1024" height="1024" fill="url(#gl)"/>
-<g filter="url(#sh)">
-<path d="M741.8 319.1A300 300 0 1 0 741.8 704.9" fill="none" stroke="url(#ring)" stroke-width="96" stroke-linecap="round"/>
-<g fill="url(#db)"><rect x="372" y="494" width="280" height="36" rx="18"/>
-<rect x="412" y="412" width="40" height="200" rx="20"/><rect x="572" y="412" width="40" height="200" rx="20"/>
-<rect x="368" y="442" width="34" height="140" rx="17"/><rect x="622" y="442" width="34" height="140" rx="17"/></g>
-<path transform="translate(792 512)" fill="#fff" d="M0-62C8-18 18-8 62 0C18 8 8 18 0 62C-8 18-18 8-62 0C-18-8-8-18 0-62Z"/>
-</g></svg>
+<circle cx="512" cy="512" r="250" fill="url(#halo)"/>
+<g filter="url(#sh)"><path d="M741.8 319.1A300 300 0 1 0 741.8 704.9" fill="none" stroke="url(#ring)" stroke-width="100" stroke-linecap="round"/></g>
+<path d="M741.8 319.1A300 300 0 1 0 741.8 704.9" fill="none" stroke="url(#ringHi)" stroke-width="22" stroke-linecap="round" transform="translate(0 -30) scale(1 1)" opacity=".0"/>
+<path d="M712 262A340 340 0 0 0 200 512" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="7" stroke-linecap="round" transform="translate(-6 0)"/>
+<g filter="url(#sh2)">
+<rect x="372" y="494" width="280" height="36" rx="18" fill="url(#steel)"/>
+<g fill="url(#steel)"><rect x="412" y="408" width="42" height="208" rx="21"/><rect x="570" y="408" width="42" height="208" rx="21"/><rect x="366" y="440" width="36" height="144" rx="18"/><rect x="622" y="440" width="36" height="144" rx="18"/></g>
+<g fill="#fff" fill-opacity=".55"><rect x="419" y="420" width="9" height="150" rx="4.5"/><rect x="577" y="420" width="9" height="150" rx="4.5"/><rect x="372" y="452" width="8" height="100" rx="4"/><rect x="628" y="452" width="8" height="100" rx="4"/></g>
+</g>
+<g transform="translate(792 512)"><path filter="url(#gw)" fill="#fff" opacity=".7" d="M0-70C9-20 20-9 70 0C20 9 9 20 0 70C-9 20-20 9-70 0C-20-9-9-20 0-70Z"/><path fill="url(#spark)" d="M0-62C8-18 18-8 62 0C18 8 8 18 0 62C-8 18-18 8-62 0C-18-8-8-18 0-62Z"/></g>
+<rect width="1024" height="520" fill="url(#gl)" opacity=".25"/>
+</svg>
