@@ -1164,7 +1164,7 @@ function drawMotion(a,time,gh){
 /* ---------- avatar 3D léger : même squelette, caméra libre (profil, 3/4, face) ---------- */
 const CAM3D={profil:0,troisq:38,face:90};
 const E3D=new Set(["squat","halfsquat","jumpsquat","bbsquat","pushup","plank","lunge","crunch","squat_bad","pushup_bad","plank_bad","lunge_bad","crunch_bad"]);
-const can3D=(key,gear)=>E3D.has(key)&&!gear;
+const can3D=(key,gear)=>{const m=MOV[key];return !!m&&!gear&&!m.f&&!m.nog&&!m.box&&!m.wall&&!m.lab};
 function draw3D(a,time){
   const {canvas:c,ctx,m,bb}=a,cam=a.cam;const dpr=Math.min(3,window.devicePixelRatio||1);
   const w=c.clientWidth||160,h=c.clientHeight||120;if(c.width!==Math.round(w*dpr)||c.height!==Math.round(h*dpr)){c.width=Math.round(w*dpr);c.height=Math.round(h*dpr)}
@@ -1183,6 +1183,7 @@ function draw3D(a,time){
   const J={};const set=(k,p,s,wd)=>{J[k]=pr(lift(p,s,wd))};
   set("hip",P.hip,0,0);set("neck",P.neck,0,0);set("head",P.head,0,0);
   set("hpN",P.hp1,1,9);set("hpF",P.hp2,-1,9);set("shN",P.sh1,1,17);set("shF",P.sh2,-1,17);
+  const hdW={N:lift(P.hand,1,19),F:lift(P.handB,-1,19)};
   set("elN",P.elbow,1,19);set("hdN",P.hand,1,19);set("elF",P.elbowB,-1,19);set("hdF",P.handB,-1,19);
   set("knN",P.knee,1,10);set("ftN",P.foot,1,10);set("toN",P.toe,1,10);set("knF",P.kneeB,-1,10);set("ftF",P.footB,-1,10);set("toF",P.toeB,-1,10);
   const tn=(col,d)=>{const f=Math.max(-.32,Math.min(.2,-d*.0035));return shade(col.startsWith("#")?col:cSkin,f)};
@@ -1206,7 +1207,8 @@ function draw3D(a,time){
   // bras
   [["N","shN","elN","hdN"],["F","shF","elF","hdF"]].forEach(([s,sh,el_,hd])=>{
     limb(J[sh],J[el_],4.6,3.4,{at:.4,amt:1},cSkin,"ua");limb(J[sh],lp(J[sh],J[el_],.4),5.6,4.8,null,cShirt);
-    limb(J[el_],J[hd],3.6,2.3,{at:.22,amt:.9},cSkin,"fa");dot(J[hd],3.1,cSkin)});
+    limb(J[el_],J[hd],3.6,2.3,{at:.22,amt:.9},cSkin,"fa");dot(J[hd],3.1,cSkin);
+    if(m.db){const hw=hdW[s];const A=pr({X:hw.X-7*1,Y:hw.Y,Z:hw.Z}),B=pr({X:hw.X+7*1,Y:hw.Y,Z:hw.Z});limb(A,B,1.5,1.5,null,"#2B3040");dot(A,3.6,"#2B3040");dot(B,3.6,"#2B3040")}});
   limb(J.neck,J.shN,3.4,5,null,cShirt,"shoulder");limb(J.neck,J.shF,3.4,5,null,cShirt,"shoulder");dot(J.shN,5.2,cShirt);dot(J.shF,5.2,cShirt);
   // tronc : volume elliptique (largeur + profondeur) selon la caméra
   const pj=(Wl,Wd)=>Math.hypot(Wl*sy,Wd*cy);
