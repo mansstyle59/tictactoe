@@ -537,6 +537,12 @@ header.top{padding-top:10px}
 .cset summary{font-size:13px;color:var(--muted);padding:6px 0}.cset .prow2{margin-top:8px}
 .coachlink{background:none;border:0;color:var(--muted);font-size:12px;justify-self:center;padding:8px;text-decoration:underline}
 .chat .fstats b{font-size:18px}.chat .fstats>div{padding:10px 8px}
+.phead{display:grid;justify-items:center;gap:4px;padding:6px 0 2px}.pav{width:84px;height:84px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-weight:900;font-size:38px;color:#fff;box-shadow:0 8px 24px rgba(31,75,255,.3),inset 0 1px 0 rgba(255,255,255,.4)}
+.phead h3{margin:6px 0 0;font:800 24px var(--display)}.plv{font-size:13px;color:var(--muted)}
+.pstats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:100%;margin-top:12px}.pstats>div{display:grid;gap:2px;padding:10px 4px;border-radius:14px;background:var(--glass);text-align:center}.pstats b{font:800 17px var(--display)}.pstats span{font-size:10.5px;color:var(--muted);line-height:1.2}
+.sect{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:6px 4px 0}
+.cset2{border-radius:16px;background:var(--glass);padding:4px 14px}.cset2 summary{padding:12px 0;font-weight:600;font-size:15px;color:var(--accent)}.cset2 .aform{padding-bottom:12px}
+.authcard.pm{grid-template-columns:minmax(0,1fr)}.pstats{grid-template-columns:repeat(4,minmax(0,1fr))}.pstats b{font-size:15px}
 </style>
 </head>
 <body>
@@ -1660,18 +1666,29 @@ function renderMe(){const b=$("#meBtn");b.hidden=!ME;if(!ME)return;
   b.innerHTML=`<i style="background:${ME.color}">${initial(ME.pseudo)}</i>`;b.setAttribute("aria-label","Profil : "+ME.pseudo);b.onclick=openProfiles;{const av=$("#tabAv");if(av){av.textContent=initial(ME.pseudo);av.style.background=ME.color}}
   const b2=$("#meBtn2");b2.innerHTML=b.innerHTML;b2.onclick=openProfiles;if(PLAN)renderHero();if(typeof renderToday==="function")renderToday()}
 function closeProfiles(){const a=$("#auth");a.hidden=true;a.innerHTML="";if($("#player").hidden&&$("#sheet").hidden)document.body.style.overflow=""}
+function profHead(){const h=ls.get("cd-hist",[]).filter(r=>r&&r.date&&mine(r)&&!r.early);
+  const days=new Set(h.map(r=>r.date.slice(0,10)));let st=0;const d=new Date();if(!days.has(d.toISOString().slice(0,10)))d.setDate(d.getDate()-1);
+  while(days.has(d.toISOString().slice(0,10))){st++;d.setDate(d.getDate()-1)}
+  const sec=h.reduce((s,r)=>s+(+r.realSec||0),0),wk=h.filter(r=>Date.now()-new Date(r.date)<7*864e5).length;
+  const lv=h.length>=100?"Légende":h.length>=30?"Confirmé":h.length>=10?"Régulier":"Débutant";
+  return`<div class="phead"><i class="pav" style="background:${ME.color}">${initial(ME.pseudo)}</i><h3>${esc(ME.pseudo)}</h3><span class="plv">${lv} · ${S.place==="gym"?"Salle":"Maison"} · ${S.mins} min</span>
+    <div class="pstats"><div><b>${h.length}</b><span>séances</span></div><div><b>${st}</b><span>jours d'affilée</span></div><div><b>${wk}</b><span>cette semaine</span></div><div><b>${fmtMin(sec)}</b><span>au total</span></div></div></div>`}
 function openProfiles(){
   const a=$("#auth");a.hidden=false;document.body.style.overflow="hidden";
   a.innerHTML=`<div class="authcard pm" role="document">
     <div class="sh-top"><h2>Profils</h2><button class="sh-x" id="pmX">Fermer</button></div>
+    ${profHead()}
+    <div class="sect">Mes profils</div>
     <div class="plist">${PROFS.map(p=>`<button class="psel${p.id===ME.id?" on":""}" data-id="${p.id}"><i style="background:${p.color}">${initial(p.pseudo)}</i><span>${esc(p.pseudo)}</span>${p.id===ME.id?'<b class="pcur">Actif</b>':""}</button>`).join("")}</div>
-    <form id="pmRen" class="aform" novalidate><label class="fld" for="pmName"><span class="label" style="padding:0">Pseudo du profil actif</span>
+    <details class="cset2"><summary>Modifier ou ajouter un profil</summary><form id="pmRen" class="aform" novalidate><label class="fld" for="pmName"><span class="label" style="padding:0">Pseudo du profil actif</span>
       <span class="prow2"><input id="pmName" maxlength="20" value="${esc(ME.pseudo)}" autocomplete="off"><button class="small-btn" type="submit">Renommer</button></span></label></form>
     <form id="pmAdd" class="aform" novalidate><label class="fld" for="pmNew"><span class="label" style="padding:0">Ajouter un profil</span>
-      <span class="prow2"><input id="pmNew" maxlength="20" placeholder="Pseudo, ex. : Liana" autocomplete="off"><button class="small-btn pri" type="submit">Ajouter</button></span></label></form>
+      <span class="prow2"><input id="pmNew" maxlength="20" placeholder="Pseudo, ex. : Liana" autocomplete="off"><button class="small-btn pri" type="submit">Ajouter</button></span></label></form></details>
     <p class="err" id="pmErr" hidden></p>
     ${PROFS.length>1?`<div id="pmDelBox"><button class="small-btn" id="pmDel" type="button">Supprimer le profil « ${esc(ME.pseudo)} »</button></div>`:""}
+    <div class="sect">Mon coach</div>
     ${accountBox()}
+    <div class="sect">Mes données</div>
     <div class="memo"><b>✓ Progression mémorisée</b><span>Tu restes connecté sur cet appareil : profils, séances, badges et machines sont gardés automatiquement, sans mot de passe.</span>
       <span class="prow2"><button class="small-btn pri" id="bkExp" type="button">Sauvegarder</button><button class="small-btn" id="bkImp" type="button">Restaurer</button></span>
       <input type="file" id="bkFile" accept="application/json,.json" hidden>
@@ -1742,7 +1759,7 @@ function accountBox(){const ac=acct();
   if(ac)return`<div class="memo"><b>☁︎ Compte coach : ${esc(ac.pseudo)}</b><span>Ta progression est suivie par ton coach, qui peut t'écrire. Sur un autre téléphone, connecte-toi avec ton pseudo et ton code pour tout retrouver.</span>
     <span class="prow2"><button class="small-btn pri" id="acMsg" type="button">Messages${unreadDot()?" ("+unreadDot()+")":""}</button><button class="small-btn" id="acOut" type="button">Me déconnecter</button></span></div>`;
   return`<form class="memo" id="acForm" novalidate><b>☁︎ Compte coach</b><span>Crée ton compte avec un pseudo et un code à 4 chiffres : ton coach pourra suivre ta progression et t'envoyer des messages.</span>
-    <span class="prow2"><input id="acPseudo" maxlength="20" value="${ME.named?esc(ME.pseudo):""}" placeholder="Pseudo" autocomplete="username"><input id="acPin" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="Code" type="password" autocomplete="current-password" style="max-width:96px"></span>
+    <span class="prow2"><input id="acPseudo" maxlength="20" value="${ME.named?esc(ME.pseudo):""}" placeholder="Pseudo" autocomplete="username"><input id="acPin" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="Code" type="password" autocomplete="current-password" style="max-width:84px;flex:none"></span>
     <span class="prow2"><button class="small-btn pri" id="acNew" type="submit">Créer mon compte</button><button class="small-btn" id="acIn" type="button">J'ai déjà un compte</button></span><span class="err" id="acErr" hidden></span></form>`}
 function bindAccount(){const ac=acct();
   if(ac){$("#acMsg").onclick=openChat;$("#acOut").onclick=()=>{if(confirm("Te déconnecter du compte coach ? Ta progression reste sur cet appareil.")){try{localStorage.removeItem("cd-cloud-"+ME.id)}catch(e){}INBOX=[];unreadDot();openProfiles()}};return}
