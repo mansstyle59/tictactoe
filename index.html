@@ -507,6 +507,23 @@ header.top{padding-top:10px}
 .busyc{gap:10px;text-align:left}.busyc>b{text-align:center;font-size:17px}
 .bopt{display:grid;gap:1px;text-align:left;border:0;border-radius:16px;padding:12px 14px;background:rgba(255,255,255,.95);color:#111}
 .bopt span{font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#0A60FF}.bopt b{font-size:17px}.bopt small{font-size:13px;color:#555}
+
+/* ===== menu façon App Store ===== */
+.tabbar{left:0!important;right:0!important;bottom:0!important;transform:none!important;width:100%!important;border-radius:0!important;gap:0!important;
+  padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px))!important;justify-content:space-around;
+  background:color-mix(in srgb,var(--bar) 88%,transparent)!important;-webkit-backdrop-filter:blur(28px) saturate(190%)!important;backdrop-filter:blur(28px) saturate(190%)!important;
+  box-shadow:0 -.5px 0 var(--line)!important;border:0!important}
+.tabbar button{background:transparent!important;box-shadow:none!important;border-radius:12px!important;min-height:50px;gap:2px;padding:4px 2px 2px;max-width:120px;transition:transform .15s,color .2s}
+.tabbar button:active{transform:scale(.92)}
+.tabbar button span{font-size:10.5px;font-weight:600;letter-spacing:.1px}
+.tabbar button[aria-pressed="true"]{color:var(--accent)!important}
+.tabbar button[aria-pressed="true"] span{font-weight:800}
+.tabbar button svg{width:26px;height:26px;transition:transform .2s}
+.tabbar button[aria-pressed="true"] svg{transform:translateY(-1px) scale(1.06)}
+.tabbar button[aria-pressed="true"] svg *{fill:currentColor;fill-opacity:.2}
+.tabav{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:800;font-size:13px;background:var(--accent);box-shadow:inset 0 1px 0 rgba(255,255,255,.4)}
+.start{bottom:calc(64px + env(safe-area-inset-bottom,0px))!important}
+.wrap{padding-block-end:150px!important}
 </style>
 </head>
 <body>
@@ -565,9 +582,10 @@ header.top{padding-top:10px}
 </div>
 
 <nav class="tabbar" id="tabs" aria-label="Navigation">
-  <button id="tabPlan" aria-pressed="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 7v10M18 7v10M3 9.5v5M21 9.5v5M6 12h12"/></svg><span>Séance</span></button>
+  <button id="tabPlan" aria-pressed="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 7v10M18 7v10M3 9.5v5M21 9.5v5M6 12h12"/></svg><span>Aujourd'hui</span></button>
   <button id="tabMach" aria-pressed="false"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h2.5l1.5-2.5h8L17.5 8H20v11H4z"/><circle cx="12" cy="13.2" r="3.4"/></svg><span>Machine</span></button>
   <button id="tabProg" aria-pressed="false"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Progrès</span></button>
+  <button id="tabMe" aria-pressed="false"><span class="tabav" id="tabAv">?</span><span>Profil</span></button>
 </nav>
 <div class="start" id="startBar"><div class="in">
   <button class="cta" id="go">Démarrer la séance</button>
@@ -1624,7 +1642,7 @@ function useProfile(p){
   seed=Math.floor(Math.random()*1e9);update();renderMe();showTab("plan");
 }
 function renderMe(){const b=$("#meBtn");b.hidden=!ME;if(!ME)return;
-  b.innerHTML=`<i style="background:${ME.color}">${initial(ME.pseudo)}</i>`;b.setAttribute("aria-label","Profil : "+ME.pseudo);b.onclick=openProfiles;
+  b.innerHTML=`<i style="background:${ME.color}">${initial(ME.pseudo)}</i>`;b.setAttribute("aria-label","Profil : "+ME.pseudo);b.onclick=openProfiles;{const av=$("#tabAv");if(av){av.textContent=initial(ME.pseudo);av.style.background=ME.color}}
   const b2=$("#meBtn2");b2.innerHTML=b.innerHTML;b2.onclick=openProfiles;if(PLAN)renderHero();if(typeof renderToday==="function")renderToday()}
 function closeProfiles(){const a=$("#auth");a.hidden=true;a.innerHTML="";if($("#player").hidden&&$("#sheet").hidden)document.body.style.overflow=""}
 function openProfiles(){
@@ -1866,7 +1884,7 @@ function showTab(t){
   const onS=()=>{raf=0;const p=Math.max(0,Math.min(1,(scrollY-18)/42));nb.style.opacity=p;nb.style.transform=`translateY(${(1-p)*-8}px)`;nb.classList.toggle("show",p>.5);
     nb.setAttribute("aria-hidden",p>.5?"false":"true");hd.style.opacity=Math.max(0,1-p*1.7);lt.style.transform=`scale(${1-p*.06})`};
   addEventListener("scroll",()=>{if(!raf)raf=requestAnimationFrame(onS)},{passive:true});onS();$("#navLogo").src=LOGO}
-$("#tabPlan").onclick=()=>showTab("plan");$("#tabMach").onclick=()=>showTab("mach");$("#tabProg").onclick=()=>showTab("prog");
+$("#tabMe").onclick=()=>openProfiles();$("#tabPlan").onclick=()=>showTab("plan");$("#tabMach").onclick=()=>showTab("mach");$("#tabProg").onclick=()=>showTab("prog");
 $("#go").onclick=startSession;$("#go2").onclick=()=>{closeCustom();setTimeout(startSession,280)};
 $("#cDone").onclick=closeCustom;$("#csheet").onclick=ev=>{if(ev.target.id==="csheet")closeCustom()};$("#heroGo").onclick=startSession;
 const JOURL=["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"],MOISL=["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
