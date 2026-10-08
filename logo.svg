@@ -1,7 +1,29 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024"><defs><radialGradient id="gl" cx=".22" cy=".08" r=".85"><stop offset="0" stop-color="#fff" stop-opacity=".5"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/></radialGradient><filter id="sh" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="20" stdDeviation="20" flood-color="#000" flood-opacity=".35"/></filter><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2F8CFF"/><stop offset="1" stop-color="#6A3DF5"/></linearGradient></defs>
-<rect width="1024" height="1024" fill="url(#bg)"/><rect width="1024" height="1024" fill="url(#gl)"/>
-<g filter="url(#sh)" fill="#fff"><circle cx="512" cy="330" r="62"/>
-<path d="M512 410C440 410 400 440 392 500L384 560C382 585 420 590 424 565L440 500H584L600 565C604 590 642 585 640 560L632 500C624 440 584 410 512 410Z"/>
-<path d="M468 600H556L580 800C583 826 540 830 536 806L512 690L488 806C484 830 441 826 444 800Z"/>
-<rect x="250" y="236" width="524" height="30" rx="15" fill="#7FF0FF"/><rect x="226" y="190" width="44" height="122" rx="18" fill="#7FF0FF"/><rect x="754" y="190" width="44" height="122" rx="18" fill="#7FF0FF"/><rect x="288" y="206" width="30" height="92" rx="14" fill="#7FF0FF"/><rect x="706" y="206" width="30" height="92" rx="14" fill="#7FF0FF"/>
-<path d="M392 500 L330 300" stroke="#fff" stroke-width="40" stroke-linecap="round"/><path d="M632 500 L694 300" stroke="#fff" stroke-width="40" stroke-linecap="round"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<defs>
+<linearGradient id="bg" x1=".1" y1="0" x2=".9" y2="1"><stop offset="0" stop-color="#3FA0FF"/><stop offset=".5" stop-color="#4A55F5"/><stop offset="1" stop-color="#7436F0"/></linearGradient>
+<radialGradient id="gl" cx=".22" cy=".06" r=".9"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/></radialGradient>
+<radialGradient id="dp" cx=".95" cy="1" r=".8"><stop offset="0" stop-color="#150760" stop-opacity=".55"/><stop offset="1" stop-color="#150760" stop-opacity="0"/></radialGradient>
+<radialGradient id="halo" cx=".5" cy=".55" r=".5"><stop offset="0" stop-color="#9CE7FF" stop-opacity=".35"/><stop offset="1" stop-color="#9CE7FF" stop-opacity="0"/></radialGradient>
+<linearGradient id="body" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#D9E2FF"/></linearGradient>
+<linearGradient id="steel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B2F6FF"/><stop offset=".5" stop-color="#3BD8F8"/><stop offset="1" stop-color="#139FD9"/></linearGradient>
+<filter id="sh" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#0F0552" flood-opacity=".5"/></filter>
+</defs>
+<rect width="1024" height="1024" fill="url(#bg)"/><rect width="1024" height="1024" fill="url(#dp)"/><rect width="1024" height="1024" fill="url(#gl)"/>
+<ellipse cx="512" cy="560" rx="300" ry="320" fill="url(#halo)"/>
+<g filter="url(#sh)">
+<!-- jambes -->
+<g fill="none" stroke="url(#body)" stroke-linecap="round" stroke-linejoin="round">
+<path d="M470 640 L440 800 L430 850" stroke-width="64"/><path d="M554 640 L584 800 L594 850" stroke-width="64"/>
+<!-- bras en V vers la barre -->
+<path d="M432 466 L356 330 L336 276" stroke-width="54"/><path d="M592 466 L668 330 L688 276" stroke-width="54"/>
+</g>
+<!-- torse -->
+<path d="M420 440C420 412 450 400 512 400C574 400 604 412 604 440L588 560C584 604 556 648 512 648C468 648 440 604 436 560Z" fill="url(#body)"/>
+<!-- tête -->
+<circle cx="512" cy="322" r="66" fill="url(#body)"/>
+<!-- barre -->
+<rect x="236" y="262" width="552" height="28" rx="14" fill="url(#steel)"/>
+<g fill="url(#steel)"><rect x="196" y="190" width="48" height="172" rx="22"/><rect x="780" y="190" width="48" height="172" rx="22"/><rect x="250" y="214" width="36" height="124" rx="17"/><rect x="738" y="214" width="36" height="124" rx="17"/></g>
+<g fill="#fff" fill-opacity=".55"><rect x="206" y="204" width="9" height="130" rx="4"/><rect x="790" y="204" width="9" height="130" rx="4"/></g>
+</g>
+</svg>
