@@ -579,6 +579,7 @@ main,.sec{scroll-padding-bottom:110px}body{padding-bottom:calc(96px + env(safe-a
 #dRn{font-size:13px;font-weight:700;color:var(--muted);min-width:64px;text-align:right}
 .dcap{margin:0;padding:10px 14px;border-radius:14px;font-size:14px;font-weight:600;line-height:1.35;background:var(--accent-soft)}.dcap.bad{background:rgba(255,59,48,.12);color:#B3141F}
 .avsw{display:flex;gap:10px}.sw{width:34px;height:34px;border-radius:50%;border:3px solid transparent;box-shadow:inset 0 1px 0 rgba(255,255,255,.4)}.sw.on{border-color:var(--ink)}
+.vbadge{position:absolute;right:8px;bottom:12px;font-size:11px;font-weight:700;letter-spacing:.03em;padding:4px 9px;border-radius:999px;background:var(--accent-soft);color:var(--accent);pointer-events:none}
 </style>
 </head>
 <body>
@@ -1668,6 +1669,7 @@ function setupDemo(s,o){
   const chips=()=>{const L=mode==="bad"?[ "Évite ça"]:(MTIPS[o.mv]||GTIPS[o.grp]||[]);tch.className="tchips"+(mode==="bad"?" bad":"");
     tch.innerHTML=L.slice(0,3).map((x,i)=>`<span class="tc tc${i+1}">${esc(x)}</span>`).join("")};
   chips();
+  {const a0=A();const vb=$("#vbadge");if(a0&&vb)vb.textContent=a0.m.lab||(a0.m.f?"Vue de face":"Vue de profil")}
   const tabs=$("#dtabs");
   if(tabs)tabs.querySelectorAll("button").forEach(b=>b.onclick=()=>{mode=b.dataset.k;tabs.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));
     const old=A();if(old)ANIMS.delete(old);const key=mode==="bad"?ERRMAP[o.mv][0]:o.mv;
@@ -1686,7 +1688,7 @@ function openSheet(o){
   s.innerHTML=`<div class="sheet-in" role="document">
     <div class="sh-top"><span class="label" style="padding:0">${esc(o.kicker)}</span><button class="sh-x" id="shX" aria-label="Fermer">Fermer</button></div>
     ${ERRMAP[o.mv]&&o.grp?`<div class="dtabs" id="dtabs" role="tablist"><button role="tab" class="on" data-k="good">✅ Bonne exécution</button><button role="tab" data-k="bad">❌ Erreur fréquente</button></div>`:""}
-    <div class="sh-stage"><div class="stwrap"><canvas id="stCv" data-mv="${o.mv}" data-gear="${o.gear||""}" data-hl="${(o.hl||[]).join(",")}" aria-label="Animation du geste"></canvas><div class="tchips" id="tch"></div></div></div>
+    <div class="sh-stage"><div class="stwrap"><canvas id="stCv" data-mv="${o.mv}" data-gear="${o.gear||""}" data-hl="${(o.hl||[]).join(",")}" aria-label="Animation du geste"></canvas><div class="tchips" id="tch"></div><span class="vbadge" id="vbadge"></span></div></div>
     <div class="democtl" id="dctl"><button id="dPlay" aria-label="Pause">❚❚</button><button id="dRep" aria-label="Rejouer">↺</button><div class="dprog"><i id="dBar"></i></div><span id="dRn">Rép. 1</span><button id="dSpd" aria-pressed="false">1×</button></div>
     <p class="dcap" id="dCap" hidden></p>
     <h2 class="sh-title">${esc(o.title)}</h2>
