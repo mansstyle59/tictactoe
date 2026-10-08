@@ -816,7 +816,7 @@ function mountMotion(canvas,key,opts={}){
 function unmountAll(root){for(const a of [...ANIMS])if(!document.body.contains(a.canvas)||(root&&root.contains(a.canvas)))ANIMS.delete(a)}
 const reduceMotion=matchMedia("(prefers-reduced-motion: reduce)").matches;
 function animLoop(now){
-  for(const a of [...ANIMS]){if(!a.canvas.isConnected){ANIMS.delete(a);continue}drawMotion(a,reduceMotion?1.2:(now-a.t0)/1000)}
+  for(const a of [...ANIMS]){if(!a.canvas.isConnected){ANIMS.delete(a);continue}const r=a.canvas.getBoundingClientRect();if(r.bottom<-40||r.top>innerHeight+40||document.hidden)continue;drawMotion(a,reduceMotion?1.2:(now-a.t0)/1000)}
   if(ANIMS.size)requestAnimationFrame(animLoop);
 }
 function shade(hex,amt){const m=/^#?([0-9a-f]{6})$/i.exec(hex.trim());if(!m)return hex;const n=parseInt(m[1],16);let r=n>>16,g=n>>8&255,b=n&255;
@@ -825,14 +825,17 @@ const HLMAP=[[/pector|poitrine|pecs/i,"chest"],[/dorsa|dos|trap|rhomb|lombai/i,"
  [/abdo|oblique|gainage|sangle/i,"abs"],[/quadri|ischio|cuisse|adduct|jambe/i,"thigh"],[/mollet/i,"shin"],[/fess|glute|abduct/i,"glute"]];
 const HLG={pecs:["chest","ua"],dos:["back"],epaules:["shoulder"],bras:["ua","fa"],abdos:["abs"],jambes:["thigh","shin"],fessiers:["glute","thigh"],cardio:["thigh","shin"]};
 function hlFromText(list){const s=new Set();(list||[]).forEach(t=>HLMAP.forEach(([re,k])=>{if(re.test(t))s.add(k)}));return [...s]}
-function drawMotion(a,time){
-  const {canvas:c,ctx,m,bb}=a;const dpr=Math.min(2,window.devicePixelRatio||1);
-  const w=c.clientWidth||160,h=c.clientHeight||120;if(c.width!==Math.round(w*dpr)){c.width=Math.round(w*dpr);c.height=Math.round(h*dpr)}
-  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+function drawMotion(a,time,gh){
+  const {canvas:c,ctx,m,bb}=a;const dpr=Math.min(3,window.devicePixelRatio||1);
+  const w=c.clientWidth||160,h=c.clientHeight||120;if(c.width!==Math.round(w*dpr)||c.height!==Math.round(h*dpr)){c.width=Math.round(w*dpr);c.height=Math.round(h*dpr)}
+  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.imageSmoothingQuality="high";
+  if(!gh){ctx.clearRect(0,0,w,h);
+    // fantôme : position opposée du mouvement, en transparence, pour comprendre l'amplitude
+    if(w>=200&&!m.cyc&&!m.fl&&!reduceMotion){const sp=m.sp||.7,u=(time*sp)%2,v=u<1?u:2-u;ctx.save();ctx.globalAlpha=.17;drawMotion(a,v<.5?1/sp:0,1);ctx.restore();ctx.setTransform(dpr,0,0,dpr,0,0)}}
   const bw=bb[1]-bb[0],bh=bb[3]-bb[2],sc=Math.min(w/bw,h/bh);
   const ox=(w-bw*sc)/2-bb[0]*sc,oy=(h-bh*sc)/2-bb[2]*sc;
   const X=p=>[ox+p[0]*sc,oy+p[1]*sc];
-  if(!a.col||a.colAt>time||a.colAt<time-2){const css=getComputedStyle(c);a.colAt=time;
+  if(!a.col||(!gh&&(a.colAt>time||a.colAt<time-2))){const css=getComputedStyle(c);a.colAt=time;
     const ink=css.getPropertyValue("--fig").trim()||"#0A6CFF";
     a.col=[ink,css.getPropertyValue("--fig2").trim()||"rgba(10,108,255,.45)",css.getPropertyValue("--grd").trim()||"rgba(0,0,0,.15)",css.getPropertyValue("--hl").trim()||"#FF6A1A",shade(ink,-.28),css.getPropertyValue("--mach").trim()||"#A3ACBD",css.getPropertyValue("--pad").trim()||"#5E6779",css.getPropertyValue("--cable").trim()||"#3E4555"];a.tone=["--skin","--shirt","--shorts","--shoe","--hair"].map((k,i)=>css.getPropertyValue(k).trim()||["#D9A07C","#2F6BFF","#1E2433","#F1F3F7","#2A211C"][i])}
   const [ink,far,grd,hlc,deep,mach,mpad,mcab]=a.col;const HL=new Set((a.opts&&a.opts.hl)||[]);
