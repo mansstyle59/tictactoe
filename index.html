@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Coach IA">
-<meta name="theme-color" content="#1F4BFF">
+<meta name="theme-color" content="#4F4BF7">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" href="favicon-32.png">
 <link rel="manifest" href="manifest.webmanifest">
@@ -582,6 +582,12 @@ main,.sec{scroll-padding-bottom:110px}body{padding-bottom:calc(96px + env(safe-a
 .vbadge{position:absolute;right:8px;bottom:12px;font-size:11px;font-weight:700;letter-spacing:.03em;padding:4px 9px;border-radius:999px;background:var(--accent-soft);color:var(--accent);pointer-events:none}
 .vwrow{display:flex;gap:6px;overflow-x:auto}.vwrow button{border:0;border-radius:999px;padding:8px 13px;font-weight:700;font-size:13px;background:var(--glass);color:var(--muted);white-space:nowrap}.vwrow button.on{background:linear-gradient(145deg,var(--accent),var(--accent2));color:#fff}
 .player .pmotion,.hero,.xcard{--skin:#C4D8FF;--hair:#1B2A7A;--shirt:#FFFFFF}
+/* ===== Harmonisation avec le logo (bleu #2F6BFF -> violet #7B2FF7) ===== */
+:root{--accent:#2F6BFF;--accent2:#7B2FF7;--accent-soft:rgba(47,107,255,.11);--fig:#2F6BFF;--fig2:rgba(47,107,255,.36)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--accent:#5B8CFF;--accent2:#9B5CFF;--accent-soft:rgba(91,140,255,.2);--fig:#5B8CFF;--fig2:rgba(91,140,255,.4)}}
+:root[data-theme="dark"]{--accent:#5B8CFF;--accent2:#9B5CFF;--accent-soft:rgba(91,140,255,.2);--fig:#5B8CFF;--fig2:rgba(91,140,255,.4)}
+.logo,.logo.big,.logo.hdr{box-shadow:0 8px 22px rgba(79,70,247,.38)}
+.tabbar button[aria-pressed="true"]{background:linear-gradient(135deg,#2F6BFF,#7B2FF7)}
 </style>
 </head>
 <body>
