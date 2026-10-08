@@ -1174,9 +1174,9 @@ function draw3D(a,time){
     a.tone=["--skin","--shirt","--shorts","--shoe","--hair"].map((k,i)=>css.getPropertyValue(k).trim()||["#D9A07C","#2F6BFF","#1E2433","#F1F3F7","#2A211C"][i])}
   const [hlc,grd]=a.col,[cSkin,cShirt,cShorts,cShoe,cHair]=a.tone;const HL=new Set((a.opts&&a.opts.hl)||[]);
   const P=frameAt(m,time);
-  const yaw=(cam.auto?cam.yaw+34*Math.sin(time*.55):cam.yaw)*D2R,cy=Math.cos(yaw),sy=Math.sin(yaw),el=11*D2R;
-  const x0=(bb[0]+bb[1])/2,wid=Math.max(bb[1]-bb[0],52),top=-Math.min(bb[2],-70);
-  const sc=Math.min(w/(wid*1.12),h/((top+12)*1.12));const base=(h+top*sc)/2+2;
+  const yaw=(cam.auto?cam.yaw+34*Math.sin(time*.55):cam.yaw)*D2R,cy=Math.cos(yaw),sy=Math.sin(yaw),el=15*D2R;
+  const x0=(bb[0]+bb[1])/2,wid=Math.max(bb[1]-bb[0]-18,56),top=Math.max(-bb[2]-10,48);
+  const sc=Math.min(w/(wid*1.02),h/((top+8)*1.06),(h-34)/(top+4));const base=Math.min((h+top*sc)/2+2,h-18);
   // point 3D : [forward,up] profil -> {X lat, Y, Z}
   const lift=(p,side,wd)=>({X:-side*wd,Y:-p[1],Z:p[0]-x0});
   const pr=q=>{const cl=-q.X*cy+q.Z*sy;return{x:w/2+(q.X*sy+q.Z*cy)*sc,y:base-(q.Y*Math.cos(el)-cl*Math.sin(el))*sc,d:cl}};
@@ -1207,6 +1207,7 @@ function draw3D(a,time){
   [["N","shN","elN","hdN"],["F","shF","elF","hdF"]].forEach(([s,sh,el_,hd])=>{
     limb(J[sh],J[el_],4.6,3.4,{at:.4,amt:1},cSkin,"ua");limb(J[sh],lp(J[sh],J[el_],.4),5.6,4.8,null,cShirt);
     limb(J[el_],J[hd],3.6,2.3,{at:.22,amt:.9},cSkin,"fa");dot(J[hd],3.1,cSkin)});
+  limb(J.neck,J.shN,3.4,5,null,cShirt,"shoulder");limb(J.neck,J.shF,3.4,5,null,cShirt,"shoulder");dot(J.shN,5.2,cShirt);dot(J.shF,5.2,cShirt);
   // tronc : volume elliptique (largeur + profondeur) selon la caméra
   const pj=(Wl,Wd)=>Math.hypot(Wl*sy,Wd*cy);
   const hk=lp(J.hip,J.neck,.2);
@@ -1217,19 +1218,21 @@ function draw3D(a,time){
   limb(lp(J.hip,J.neck,.56),lp(J.hip,J.neck,.98),pj(14.5,8.6),pj(16,8.6),null,cShirt,"shoulder",true);
   limb(lp(J.hip,J.neck,.28),lp(J.hip,J.neck,.56),pj(9.6,8),pj(11,8.4),null,cShirt,"abs",true);
   limb(J.hip,lp(J.hip,J.neck,.28),pj(11.4,8.8),pj(10.4,8.2),null,cShirt,"glute",true);
-  // tête
-  const hu=(()=>{const x=J.head.x-J.neck.x,y=J.head.y-J.neck.y,l=Math.hypot(x,y)||1;return[x/l,y/l]})();
-  items.push({d:J.head.d+.5,f:()=>{const H=J.head,r=9.4*sc;
-    ctx.fillStyle=tn(cSkin,J.neck.d);ctx.beginPath();ctx.arc(J.neck.x+hu[0]*3*sc,J.neck.y+hu[1]*3*sc,3.6*sc,0,7);ctx.fill();
-    const hg=ctx.createRadialGradient(H.x-r*.3,H.y-r*.4,r*.1,H.x,H.y,r*1.05);hg.addColorStop(0,shade(cSkin,.16));hg.addColorStop(1,shade(cSkin,-.16));ctx.fillStyle=hg;ctx.beginPath();ctx.arc(H.x,H.y,r,0,7);ctx.fill();
-    // le visage regarde vers l'avant du personnage (axe Z), selon la caméra
-    const face=Math.sin(yaw),side=Math.cos(yaw);// face>0 : on voit le visage
-    const sup=!!(m.k[0]&&m.k[0].sup);const fdir=sup?-1:1;const fz=face*fdir;
-    ctx.save();ctx.beginPath();ctx.arc(H.x,H.y,r*1.02,0,7);ctx.clip();ctx.fillStyle=cHair;
-    const back=Math.max(0,-fz);
-    ctx.beginPath();ctx.arc(H.x-(side*fdir)*r*.35*1,H.y-r*.15-hu[1]*0,r*(.98+.1*back),Math.PI,0);ctx.lineTo(H.x+r*1.1,H.y-r*.1+back*r*1.2);ctx.lineTo(H.x-r*1.1,H.y-r*.1+back*r*1.2);ctx.closePath();ctx.fill();ctx.restore();
-    if(fz>.15){ctx.fillStyle="#1A1A1A";const ex=(side*fdir)*r*.3*0+fz*0;[-1,1].forEach(o=>{ctx.beginPath();ctx.arc(H.x+(o*r*.34*fz)+(side*fdir)*r*.45,H.y+r*.12,r*.1,0,7);ctx.fill()})}
-    if(window.AVF){ctx.fillStyle=cHair;ctx.beginPath();ctx.arc(H.x-(side*fdir)*r*.8-(fz>0?0:0),H.y+r*.1,r*.42,0,7);ctx.fill()}}});
+  // tête : orientation réelle (le visage suit le cou), yeux, nez, cheveux
+  {const Hw={X:0,Y:-P.head[1],Z:P.head[0]-x0},Nw={X:0,Y:-P.neck[1],Z:P.neck[0]-x0};
+   let uz=Hw.Z-Nw.Z,uy=Hw.Y-Nw.Y;const ul=Math.hypot(uz,uy)||1;uz/=ul;uy/=ul;
+   const sup=!!(m.k[0]&&m.k[0].sup);const fz=sup?-uy:uy,fy=sup?uz:-uz;
+   const at3=(f,u,l)=>({X:Hw.X+l,Y:Hw.Y+fy*f+uy*u,Z:Hw.Z+fz*f+uz*u});
+   const hc=pr(Hw),r=9.2*sc;
+   const fv=(fz*sy*Math.cos(el)+fy*Math.sin(el));const vis=P3=>pr(P3);
+   items.push({d:hc.d+.5,f:()=>{
+     const nk=pr({X:0,Y:Nw.Y+uy*3,Z:Nw.Z+uz*3});ctx.fillStyle=tn(cSkin,J.neck.d);ctx.beginPath();ctx.arc(nk.x,nk.y,3.6*sc,0,7);ctx.fill();
+     const hg=ctx.createRadialGradient(hc.x-r*.3,hc.y-r*.4,r*.1,hc.x,hc.y,r*1.05);hg.addColorStop(0,shade(cSkin,.16));hg.addColorStop(1,shade(cSkin,-.16));ctx.fillStyle=hg;ctx.beginPath();ctx.arc(hc.x,hc.y,r,0,7);ctx.fill();
+     const hr=pr(at3(-3.4,2.6,0));ctx.save();ctx.beginPath();ctx.arc(hc.x,hc.y,r*1.02,0,7);ctx.clip();ctx.fillStyle=cHair;ctx.beginPath();ctx.arc(hr.x,hr.y,r*1.0,0,7);ctx.fill();ctx.restore();
+     if(fv>-.05){const nz=pr(at3(10.4,-.6,0));if(nz.d>hc.d-2){ctx.fillStyle=shade(cSkin,-.14);ctx.beginPath();ctx.arc(nz.x,nz.y,1.7*sc,0,7);ctx.fill()}
+       ctx.fillStyle="#1A1A1A";[-1,1].forEach(o=>{const e=pr(at3(8.8,1.1,o*3.3));if(e.d>hc.d){ctx.beginPath();ctx.arc(e.x,e.y,.95*sc,0,7);ctx.fill()}})}
+   }});
+   if(window.AVF){const pt=pr(at3(-9.6,.4,0));items.push({d:pt.d,f:()=>{ctx.fillStyle=tn(cHair,pt.d);ctx.beginPath();ctx.arc(pt.x,pt.y,4.2*sc,0,7);ctx.fill();const p2=pr(at3(-12.4,-3.5,0));ctx.beginPath();ctx.arc(p2.x,p2.y,3*sc,0,7);ctx.fill()}})}}
   // sol + ombre
   const gc=pr({X:0,Y:0,Z:0});
   ctx.save();ctx.translate(gc.x,gc.y+2);ctx.scale(1,.2);const rg=ctx.createRadialGradient(0,0,0,0,0,wid*.62*sc);rg.addColorStop(0,grd);rg.addColorStop(1,"rgba(0,0,0,0)");ctx.fillStyle=rg;ctx.beginPath();ctx.arc(0,0,wid*.62*sc,0,7);ctx.fill();ctx.restore();
