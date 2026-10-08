@@ -810,11 +810,15 @@ Object.assign(MOV,{
  lunge_bad:{k:[M({ua:0,fa:0,c:[["foot",0],["footB",0]]}),M({t:150,ua:0,fa:0,th:100,sh:25,tb:-20,sb:-77,ft:90,c:[["foot",0],["toeB",0]]})],sp:.7},
  curl_bad:{db:1,k:[M({ua:0,fa:0}),M({t:205,ua:35,fa:150})],sp:.8},
  bridge_bad:{k:[Object.assign({},SUP,{c:[["neck",0],["foot",0]]}),Object.assign({},SUP,{t:58,th:-125,sh:-5,c:[["neck",0],["foot",0]]})],sp:.7},
- row_bad:{db:1,k:[M({t:165,ua:0,fa:0,th:12,sh:-10}),M({t:165,ua:-105,fa:0,th:12,sh:-10})],sp:.8}
+ row_bad:{db:1,k:[M({t:165,ua:0,fa:0,th:12,sh:-10}),M({t:165,ua:-105,fa:0,th:12,sh:-10})],sp:.8},
+ rdl_bad:{db:1,k:[M({ua:0,fa:0}),M({t:122,ua:0,fa:0,th:48,sh:-32})],sp:.6},
+ overhead_bad:{db:1,k:[M({t:190,ua:172,fa:-25}),M({t:190,ua:172,fa:178})],sp:.7},
+ kickback_bad:{k:[M({t:160,ua:75,fa:85,th:5,sh:0,tb:0,sb:0}),M({t:160,ua:25,fa:30,th:5,sh:0,tb:0,sb:0})],sp:.8}
 });
 const ERRMAP={squat:["squat_bad","Dos qui s'arrondit et buste trop penché"],halfsquat:["squat_bad","Dos qui s'arrondit et buste trop penché"],bbsquat:["squat_bad","Buste qui bascule vers l'avant"],hacksquat:["squat_bad","Buste qui bascule vers l'avant"],
  pushup:["pushup_bad","Bassin qui s'affaisse, corps non aligné"],plank:["plank_bad","Bassin qui tombe, dos creusé"],crunch:["crunch_bad","Tirer sur la nuque au lieu de contracter les abdos"],
- lunge:["lunge_bad","Genou qui avance trop et buste penché"],curl:["curl_bad","Balancer le buste pour aider"],bridge:["bridge_bad","Dos cambré, bassin pas assez monté"],row:["row_bad","Dos trop redressé, tirer avec les bras seulement"]};
+ lunge:["lunge_bad","Genou qui avance trop et buste penché"],curl:["curl_bad","Balancer le buste pour aider"],bridge:["bridge_bad","Dos cambré, bassin pas assez monté"],row:["row_bad","Dos trop redressé, tirer avec les bras seulement"],
+ goblet:["squat_bad","Dos qui s'arrondit et buste trop penché"],rdl:["rdl_bad","Dos qui s'arrondit, genoux trop fléchis (ce n'est plus une charnière)"],overhead:["overhead_bad","Dos cambré, coudes qui s'écartent"],kickback:["kickback_bad","Le bras balance au lieu de seulement tendre le coude"]};
 const MTIPS={squat:["Dos droit","Genoux alignés","Descends lentement"],halfsquat:["Dos droit","Genoux alignés","Descends lentement"],bbsquat:["Dos droit","Genoux alignés","Pousse dans les talons"],
  pushup:["Corps aligné","Coudes près du corps","Descends poitrine au sol"],plank:["Corps en ligne","Contracte les abdos","Respire calmement"],crunch:["Menton off","Contracte les abdos","Souffle en montant"],
  lunge:["Buste droit","Genou au-dessus du pied","Descends lentement"],curl:["Coudes collés","Buste immobile","Contrôle la descente"],bridge:["Serre les fessiers","Épaules au sol","Monte le bassin"],row:["Dos plat","Épaules basses","Tire les coudes"]};
