@@ -361,6 +361,10 @@ input[type=range]::-webkit-slider-thumb{margin-top:-13px;width:28px;height:28px;
 .hdate{background:var(--accent-soft);color:var(--accent)}
 .tip{background:var(--glass);border-radius:14px}
 .authcard{background:var(--sheetbg);box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.gbtn{display:grid;justify-items:center;gap:4px;padding:22px 16px;border:0;border-radius:24px;color:#fff;text-align:center;cursor:pointer;position:relative;box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 12px 28px rgba(0,0,0,.22);transition:transform .15s}
+.gbtn:active{transform:scale(.97)}.gbtn b{font-size:21px;font-weight:800}.gbtn small{font-size:13px;opacity:.9;line-height:1.35}
+.gbtn.home{background:linear-gradient(145deg,#30D158,#0E9F87)}.gbtn.gym{background:linear-gradient(145deg,#0A84FF,#5E5CE6)}
+.gbtn.last::after{content:"Dernier choix";position:absolute;top:10px;right:12px;font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:99px;background:rgba(255,255,255,.25)}
 .psel{background:var(--glass);border:1.5px solid transparent;border-radius:14px}
 .psel.on{border-color:var(--accent);background:var(--glass)}
 .fld input,.mctx input{background:var(--glass);border:0;box-shadow:none;border-radius:12px}
@@ -1175,7 +1179,7 @@ function renderPlan(){
   mountAll($("#plan"));$("#plan").querySelectorAll(".item").forEach(it=>{const c=it.querySelector("canvas");if(c)it.onclick=()=>openSheet(exSheet(EXBY[c.dataset.ex]))});
   $("#shuffle").onclick=()=>{seed=Math.floor(Math.random()*1e9);update()};
 }
-function update(){ls.set(ME?"cd-set-"+ME.id:"cd-set",S);renderControls();if(S.groups.length){PLAN=build(S,seed);renderPlan()}else $("#plan").innerHTML=`<div class="empty"><b>Aucune zone choisie</b>Touche une zone au-dessus pour préparer ta séance.</div>`;$("#go").disabled=!S.groups.length;["#go2","#heroGo"].forEach(s=>{const b=$(s);if(b)b.disabled=!S.groups.length})}
+function update(){ls.set(ME?"cd-set-"+ME.id:"cd-set",S);renderControls();if(S.groups.length){PLAN=build(S,seed);renderPlan()}else $("#plan").innerHTML=`<div class="empty"><b>Aucune zone choisie</b>Touche une zone au-dessus pour préparer ta séance.</div>`;$("#go").disabled=!S.groups.length;["#go2","#heroGo"].forEach(s=>{const b=$(s);if(b)b.disabled=!S.groups.length});if(typeof renderRail==="function")renderRail()}
 $("#mins").oninput=e=>{S.mins=+e.target.value;update()};
 
 /* ---------- voix ---------- */
@@ -1553,7 +1557,17 @@ function boot(){
   if(!PROFS.length){PROFS=[{id:"p"+Date.now(),pseudo:"Moi",color:AVC[0],created:new Date().toISOString()}]}
   PROFS.sort((a,b)=>a.created.localeCompare(b.created));saveProfs();
   useProfile(PROFS.find(x=>x.id===ls.get("cd-pid",null))||PROFS[0]);
-  if(PROFS.length===1&&!PROFS[0].named)showWelcome(PROFS[0]);
+  if(PROFS.length===1&&!PROFS[0].named)showWelcome(PROFS[0]);else showPlaceGate();
+}
+function showPlaceGate(){
+  const a=$("#auth");a.hidden=false;document.body.style.overflow="hidden";
+  const ic={home:'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7M5 10v10h14V10"/></svg>',gym:'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 7v10M18 7v10M3 9.5v5M21 9.5v5M6 12h12"/></svg>'};
+  a.innerHTML=`<div class="authcard gate" role="document"><img class="logo big" src="${LOGO}" alt="Logo Coach IA">
+    <h2 style="text-align:center">${ME&&ME.named?"Salut "+esc(ME.pseudo)+" !":"Salut !"}</h2>
+    <p class="note" style="margin:0;padding:0;text-align:center">Où t'entraînes-tu aujourd'hui ?</p>
+    <button class="gbtn home${S.place!=="gym"?" last":""}" data-p="home">${ic.home}<b>À la maison</b><small>Poids du corps, chaise, mur.<br>Haltères en option.</small></button>
+    <button class="gbtn gym${S.place==="gym"?" last":""}" data-p="gym">${ic.gym}<b>En salle de sport</b><small>Machines, poulies, barres, haltères et cardio.</small></button></div>`;
+  a.querySelectorAll(".gbtn").forEach(b=>b.onclick=()=>{S.place=b.dataset.p;seed=Math.floor(Math.random()*1e9);closeProfiles();update();showTab("plan");window.scrollTo(0,0);toast(S.place==="gym"?"Mode salle : machines et poids":"Mode maison : sans matériel")});
 }
 function showWelcome(p){
   const a=$("#auth");a.hidden=false;document.body.style.overflow="hidden";
@@ -1569,7 +1583,7 @@ function showWelcome(p){
   setTimeout(()=>$("#wName").focus(),200);
   $("#wForm").onsubmit=ev=>{ev.preventDefault();const n=$("#wName").value.trim();
     if(n.length<2){$("#wErr").textContent="Ton pseudo doit faire au moins 2 caractères.";$("#wErr").hidden=false;return}
-    const q=PROFS.find(x=>x.id===p.id);q.pseudo=n;q.named=true;saveProfs();closeProfiles();useProfile(q);toast("Bienvenue "+n+" !")};
+    const q=PROFS.find(x=>x.id===p.id);q.pseudo=n;q.named=true;saveProfs();closeProfiles();useProfile(q);showPlaceGate()};
 }
 function useProfile(p){
   ME=Object.assign({},p,{first:PROFS[0].id===p.id});ls.set("cd-pid",p.id);
@@ -1635,7 +1649,12 @@ const EXPRESS=[
  {t:"Haut du corps",m:25,g:["pecs","dos","epaules","bras"],p:"home",c:["#0A84FF","#5E5CE6"],mv:"pushup",hl:["chest","ua"]},
  {t:"Jambes & fessiers",m:30,g:["jambes","fessiers"],p:"home",c:["#30D158","#0E9F87"],mv:"squat",hl:["thigh","glute"]},
  {t:"Corps entier",m:45,g:["pecs","dos","jambes","fessiers","abdos"],p:"home",c:["#5E5CE6","#BF5AF2"],mv:"burpee",hl:[]},
- {t:"Salle : force",m:60,g:["pecs","dos","jambes"],p:"gym",c:["#0A84FF","#64D2FF"],mv:"legpress",gear:"legpress",hl:["thigh"]}];
+ {t:"Salle : force",m:60,g:["pecs","dos","jambes"],p:"gym",c:["#0A84FF","#64D2FF"],mv:"legpress",gear:"legpress",hl:["thigh"]},
+ {t:"Pecs & triceps",m:45,g:["pecs","bras"],p:"gym",c:["#FF453A","#FF9F0A"],mv:"seatpress",gear:"seat_handles",hl:["chest","ua"]},
+ {t:"Dos & biceps",m:45,g:["dos","bras"],p:"gym",c:["#30D158","#0E9F87"],mv:"pulldown",gear:"pulldown",hl:["back","ua"]},
+ {t:"Jambes & fessiers",m:50,g:["jambes","fessiers"],p:"gym",c:["#5E5CE6","#BF5AF2"],mv:"hipthrust",gear:"",hl:["thigh","glute"]},
+ {t:"Cardio salle",m:30,g:["cardio","abdos"],p:"gym",c:["#FF375F","#FF9F0A"],mv:"run",gear:"treadmill",hl:["thigh","shin"]},
+ {t:"Épaules & abdos",m:35,g:["epaules","abdos"],p:"gym",c:["#0A84FF","#5E5CE6"],mv:"seatpress",gear:"seat_handles",hl:["sh","abs"]}];
 const ICO={fire:'<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2c1 3.5-1.5 5-1.5 7.5 0 1.4 1 2.5 2.3 2.5 1.5 0 2.2-1.3 2.2-2.6 2 1.6 3 3.8 3 6.1A6 6 0 0 1 6 15.5C6 10.5 11 8 12 2z"/></svg>',
  clock:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'};
 function relDay(d){const a=new Date();a.setHours(0,0,0,0);const b=new Date(d);b.setHours(0,0,0,0);const n=Math.round((a-b)/864e5);return n<=0?"Aujourd'hui":n===1?"Hier":"Il y a "+n+" jours"}
@@ -1649,8 +1668,8 @@ async function renderHome(){
    <button class="st3" data-go="prog"><span class="st3i clk">${ICO.clock}</span><b class="sm">${last?relDay(last.date):"Aucune"}</b><span>${last?"dernière · "+fmtMin(last.realSec):"dernière séance"}</span></button>`;
   box.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>showTab("prog"));
   renderRail()}
-function renderRail(){const rail=$("#rail");if(rail&&!rail.dataset.done){rail.dataset.done=1;
-    rail.innerHTML=EXPRESS.map((x,i)=>`<button class="xcard" data-i="${i}" style="background:linear-gradient(150deg,${x.c[0]},${x.c[1]})"><canvas data-mv="${x.mv}" data-gear="${x.gear||""}" data-hl="${x.hl.join(",")}" aria-hidden="true"></canvas>
+function renderRail(){const rail=$("#rail");if(rail&&rail.dataset.done!==S.place){rail.dataset.done=S.place;rail.scrollLeft=0;unmountAll(rail);
+    rail.innerHTML=EXPRESS.map((x,i)=>x.p!==S.place?"":`<button class="xcard" data-i="${i}" style="background:linear-gradient(150deg,${x.c[0]},${x.c[1]})"><canvas data-mv="${x.mv}" data-gear="${x.gear||""}" data-hl="${x.hl.join(",")}" aria-hidden="true"></canvas>
       <span class="xt">${esc(x.t)}</span><span class="xs">${x.m} min · ${x.p==="gym"?"En salle":"Maison"}</span></button>`).join("");
     mountAll(rail);
     rail.querySelectorAll(".xcard").forEach(b=>b.onclick=()=>{const x=EXPRESS[+b.dataset.i];S.mins=x.m;S.groups=x.g.slice();S.place=x.p;seed=Math.floor(Math.random()*1e9);update();
