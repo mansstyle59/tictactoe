@@ -524,6 +524,19 @@ header.top{padding-top:10px}
 .tabav{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:800;font-size:13px;background:var(--accent);box-shadow:inset 0 1px 0 rgba(255,255,255,.4)}
 .start{bottom:calc(64px + env(safe-area-inset-bottom,0px))!important}
 .wrap{padding-block-end:150px!important}
+.tdot{position:absolute;top:2px;left:calc(50% + 6px);min-width:17px;height:17px;border-radius:9px;background:#FF3B30;color:#fff;font:700 11px/17px var(--display);text-align:center;font-style:normal;padding:0 4px}
+#tabMe{position:relative}
+.chat .thread{display:grid;gap:8px;max-height:46vh;overflow-y:auto;padding:4px 2px}
+.bub{max-width:82%;padding:9px 13px;border-radius:18px;display:grid;gap:3px;font-size:15px;line-height:1.35;word-break:break-word}
+.bub small{font-size:11px;opacity:.7}
+.bub.coach{justify-self:start;background:var(--glass-hi);border-bottom-left-radius:6px}
+.bub.mi{justify-self:end;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-bottom-right-radius:6px}
+#chI,#cI,#acPseudo,#acPin,#cNc{flex:1;min-width:0;border:1.5px solid var(--edge-lo);background:var(--glass-hi);border-radius:14px;padding:10px 12px;font-size:16px;color:var(--ink)}
+.csub{display:block;font-size:12px;font-weight:500;color:var(--muted)}
+.slist{display:grid;gap:6px}.srow{display:grid;gap:1px;padding:8px 12px;border-radius:12px;background:var(--glass)}.srow b{font-size:14px}.srow span{font-size:12px;color:var(--muted)}
+.cset summary{font-size:13px;color:var(--muted);padding:6px 0}.cset .prow2{margin-top:8px}
+.coachlink{background:none;border:0;color:var(--muted);font-size:12px;justify-self:center;padding:8px;text-decoration:underline}
+.chat .fstats b{font-size:18px}.chat .fstats>div{padding:10px 8px}
 </style>
 </head>
 <body>
@@ -1406,6 +1419,7 @@ async function saveSession(feel){
   if(!rec.early)S.adj=Math.round(clamp((S.adj||1)+(feel==="facile"?.1:feel==="dur"?-.1:0),.7,1.3)*10)/10;
   $("#player").querySelector(".pact").innerHTML=`<div class="ptag" style="text-align:center">Enregistrement…</div>`;
   await Store.add(rec);
+  cloudSync();
   $("#player").hidden=true;document.body.style.overflow="";R=null;
   seed=Math.floor(Math.random()*1e9);update();showTab("prog");
 }
@@ -1608,6 +1622,7 @@ function boot(){
   if(!PROFS.length){PROFS=[{id:"p"+Date.now(),pseudo:"Moi",color:AVC[0],created:new Date().toISOString()}]}
   PROFS.sort((a,b)=>a.created.localeCompare(b.created));saveProfs();
   useProfile(PROFS.find(x=>x.id===ls.get("cd-pid",null))||PROFS[0]);
+  cloudSync();
   if(PROFS.length===1&&!PROFS[0].named)showWelcome(PROFS[0]);else showPlaceGate();
 }
 function showPlaceGate(){
@@ -1637,7 +1652,7 @@ function showWelcome(p){
     const q=PROFS.find(x=>x.id===p.id);q.pseudo=n;q.named=true;saveProfs();closeProfiles();useProfile(q);showPlaceGate()};
 }
 function useProfile(p){
-  ME=Object.assign({},p,{first:PROFS[0].id===p.id});ls.set("cd-pid",p.id);
+  ME=Object.assign({},p,{first:PROFS[0].id===p.id});ls.set("cd-pid",p.id);INBOX=[];setTimeout(()=>{unreadDot();if(typeof cloudPull==="function")cloudPull()},0);
   S=Object.assign({mins:45,groups:["pecs","dos","jambes","fessiers","abdos"],lvl:2,eq:0,place:"home"},ls.get("cd-set-"+p.id,null)||ls.get("cd-set",{}));
   seed=Math.floor(Math.random()*1e9);update();renderMe();showTab("plan");
 }
@@ -1656,12 +1671,15 @@ function openProfiles(){
       <span class="prow2"><input id="pmNew" maxlength="20" placeholder="Pseudo, ex. : Liana" autocomplete="off"><button class="small-btn pri" type="submit">Ajouter</button></span></label></form>
     <p class="err" id="pmErr" hidden></p>
     ${PROFS.length>1?`<div id="pmDelBox"><button class="small-btn" id="pmDel" type="button">Supprimer le profil « ${esc(ME.pseudo)} »</button></div>`:""}
+    ${accountBox()}
     <div class="memo"><b>✓ Progression mémorisée</b><span>Tu restes connecté sur cet appareil : profils, séances, badges et machines sont gardés automatiquement, sans mot de passe.</span>
       <span class="prow2"><button class="small-btn pri" id="bkExp" type="button">Sauvegarder</button><button class="small-btn" id="bkImp" type="button">Restaurer</button></span>
       <input type="file" id="bkFile" accept="application/json,.json" hidden>
       <small>Astuce iPhone : ajoute l'appli à l'écran d'accueil pour garder tes données plus longtemps, et sauvegarde de temps en temps pour changer de téléphone.</small></div>
     <div class="about"><img class="logo" src="${LOGO}" alt=""><span><b>Coach IA</b><br>Version 1.0</span></div>
+    <button class="coachlink" id="coachLnk" type="button">Espace coach</button>
   </div>`;
+  bindAccount();$("#coachLnk").onclick=openCoach;
   const err=m=>{$("#pmErr").textContent=m;$("#pmErr").hidden=false};
   const check=(n,self)=>n.length<2?"Le pseudo doit faire au moins 2 caractères.":PROFS.some(p=>p.id!==self&&p.pseudo.toLowerCase()===n.toLowerCase())?"Ce pseudo existe déjà.":"";
   $("#bkExp").onclick=exportBackup;$("#bkImp").onclick=()=>$("#bkFile").click();$("#bkFile").onchange=ev=>{const f=ev.target.files[0];if(f&&confirm("Restaurer cette sauvegarde ? Elle remplace les données actuelles de cet appareil."))importBackup(f)};
@@ -1678,6 +1696,104 @@ function openProfiles(){
       ls.set("cd-hist",ls.get("cd-hist",[]).filter(r=>!gone(r)));ls.set("cd-scans",ls.get("cd-scans",[]).filter(r=>!gone(r)));
       PROFS=PROFS.filter(p=>p.id!==id);saveProfs();closeProfiles();useProfile(PROFS[0])}};
 }
+/* ---------- compte coach (inscrits, messages, suivi) ---------- */
+const CLOUD={url:"https://vfxblubjsxwseacmslnu.supabase.co",key:"sb_publishable_HojETqgwpBMQ_cjDzMNaAg_WGCFMaED"};
+async function rpc(fn,body){const c=new AbortController(),t=setTimeout(()=>c.abort(),10000);
+  try{const r=await fetch(CLOUD.url+"/rest/v1/rpc/"+fn,{method:"POST",headers:{apikey:CLOUD.key,"Content-Type":"application/json"},body:JSON.stringify(body||{}),signal:c.signal});
+    const j=await r.json();return j&&typeof j==="object"&&!Array.isArray(j)?j:{error:"reponse"}}catch(e){return{error:"reseau"}}finally{clearTimeout(t)}}
+const CERR={reseau:"Pas de connexion. Réessaie dans un instant.",pseudo_invalide:"Le pseudo doit faire entre 2 et 20 caractères.",pin_invalide:"Le code doit faire exactement 4 chiffres.",pseudo_pris:"Ce pseudo est déjà pris. Choisis-en un autre.",identifiants_invalides:"Pseudo ou code incorrect.",compte_verrouille:"Trop d'essais. Réessaie dans 15 minutes.",complet:"Les inscriptions sont complètes.",session_invalide:"Session expirée : reconnecte-toi.",message_vide:"Écris un message d'abord.",trop_de_messages:"Trop de messages, patiente un peu.",code_invalide:"Code coach incorrect.",verrouille:"Trop d'essais. Réessaie plus tard.",reponse:"Réponse inattendue du serveur."};
+const cerr=e=>CERR[e]||"Une erreur est survenue ("+e+").";
+const acct=()=>ME?ls.get("cd-cloud-"+ME.id,null):null;
+let INBOX=[];
+const when=d=>{try{return new Date(d).toLocaleDateString("fr-FR",{day:"numeric",month:"short"})+" "+new Date(d).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}catch(e){return""}};
+function unreadDot(){const n=INBOX.filter(m=>m.from_coach&&!m.read).length;const b=$("#tabMe");if(!b)return n;let d=b.querySelector(".tdot");
+  if(n&&!d){d=document.createElement("i");d.className="tdot";d.setAttribute("aria-hidden","true");b.appendChild(d)}else if(!n&&d)d.remove();
+  if(d)d.textContent=n>9?"9+":n;return n}
+function profSummary(){return{place:S.place,lvl:S.lvl,mins:S.mins,groups:S.groups}}
+async function cloudSync(){const a=acct();if(!a)return;
+  const done=new Set(ls.get("cd-sync-"+ME.id,[]));const mineRecs=ls.get("cd-hist",[]).filter(r=>r&&r.date&&mine(r)&&!done.has(r.date));
+  let first=true;
+  for(const r of mineRecs.slice(0,30)){const j=await rpc("coachia_push",{p_id:a.id,p_token:a.token,p_rec:r,p_profile:first?profSummary():null});first=false;
+    if(j.error==="session_invalide"){return}if(j.ok)done.add(r.date);else if(j.error==="reseau")break}
+  ls.set("cd-sync-"+ME.id,[...done].slice(-1000));
+  if(!mineRecs.length)await rpc("coachia_push",{p_id:a.id,p_token:a.token,p_profile:profSummary()});
+  await cloudPull()}
+async function cloudPull(){const a=acct();if(!a)return;const j=await rpc("coachia_pull",{p_id:a.id,p_token:a.token});if(j.error){return}
+  INBOX=j.messages||[];unreadDot();
+  const h=ls.get("cd-hist",[]),have=new Set(h.filter(mine).map(r=>r.date));let add=0;
+  (j.sessions||[]).forEach(r=>{if(r&&r.date&&!have.has(r.date)){r.pid=ME.id;h.push(r);add++}});
+  if(add){ls.set("cd-hist",h);try{update()}catch(e){}}
+  const done=new Set(ls.get("cd-sync-"+ME.id,[]));(j.sessions||[]).forEach(r=>r&&r.date&&done.add(r.date));ls.set("cd-sync-"+ME.id,[...done].slice(-1000))}
+setInterval(()=>{if(!document.hidden&&acct())cloudPull()},60000);
+function openChat(){const a=$("#auth"),ac=acct();if(!ac)return openProfiles();
+  a.hidden=false;document.body.style.overflow="hidden";
+  const draw=()=>{a.innerHTML=`<div class="authcard pm chat" role="document"><div class="sh-top"><h2>Mon coach</h2><button class="sh-x" id="chX">Fermer</button></div>
+    <div class="thread" id="thr">${INBOX.length?INBOX.map(m=>`<div class="bub ${m.from_coach?"coach":"mi"}"><span>${esc(m.body)}</span><small>${m.from_coach?"Coach · ":""}${when(m.at)}</small></div>`).join(""):'<p class="note" style="text-align:center">Aucun message pour le moment.</p>'}</div>
+    <form id="chF" class="prow2" novalidate><input id="chI" maxlength="1000" placeholder="Écris à ton coach…" autocomplete="off" enterkeyhint="send"><button class="small-btn pri" type="submit">Envoyer</button></form>
+    <p class="err" id="chE" hidden></p></div>`;
+    const t=$("#thr");t.scrollTop=t.scrollHeight;$("#chX").onclick=closeProfiles;a.onclick=ev=>{if(ev.target===a)closeProfiles()};
+    $("#chF").onsubmit=async ev=>{ev.preventDefault();const v=$("#chI").value.trim();if(!v)return;$("#chI").disabled=true;
+      const j=await rpc("coachia_send",{p_id:ac.id,p_token:ac.token,p_body:v});
+      if(j.error){$("#chE").textContent=cerr(j.error);$("#chE").hidden=false;$("#chI").disabled=false;return}
+      INBOX.push({from_coach:false,body:v,at:new Date().toISOString(),read:true});draw()}};
+  draw();
+  rpc("coachia_read",{p_id:ac.id,p_token:ac.token}).then(()=>{INBOX.forEach(m=>{if(m.from_coach)m.read=true});unreadDot()})}
+function accountBox(){const ac=acct();
+  if(ac)return`<div class="memo"><b>☁︎ Compte coach : ${esc(ac.pseudo)}</b><span>Ta progression est suivie par ton coach, qui peut t'écrire. Sur un autre téléphone, connecte-toi avec ton pseudo et ton code pour tout retrouver.</span>
+    <span class="prow2"><button class="small-btn pri" id="acMsg" type="button">Messages${unreadDot()?" ("+unreadDot()+")":""}</button><button class="small-btn" id="acOut" type="button">Me déconnecter</button></span></div>`;
+  return`<form class="memo" id="acForm" novalidate><b>☁︎ Compte coach</b><span>Crée ton compte avec un pseudo et un code à 4 chiffres : ton coach pourra suivre ta progression et t'envoyer des messages.</span>
+    <span class="prow2"><input id="acPseudo" maxlength="20" value="${ME.named?esc(ME.pseudo):""}" placeholder="Pseudo" autocomplete="username"><input id="acPin" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="Code" type="password" autocomplete="current-password" style="max-width:96px"></span>
+    <span class="prow2"><button class="small-btn pri" id="acNew" type="submit">Créer mon compte</button><button class="small-btn" id="acIn" type="button">J'ai déjà un compte</button></span><span class="err" id="acErr" hidden></span></form>`}
+function bindAccount(){const ac=acct();
+  if(ac){$("#acMsg").onclick=openChat;$("#acOut").onclick=()=>{if(confirm("Te déconnecter du compte coach ? Ta progression reste sur cet appareil.")){try{localStorage.removeItem("cd-cloud-"+ME.id)}catch(e){}INBOX=[];unreadDot();openProfiles()}};return}
+  const err=m=>{$("#acErr").textContent=m;$("#acErr").hidden=false};
+  const go=async fn=>{const p=$("#acPseudo").value.trim(),pin=$("#acPin").value.trim();if(p.length<2)return err(cerr("pseudo_invalide"));if(!/^\d{4}$/.test(pin))return err(cerr("pin_invalide"));
+    document.querySelectorAll("#acForm button").forEach(b=>b.disabled=true);
+    const j=await rpc(fn,fn==="coachia_register"?{p_pseudo:p,p_pin:pin,p_color:ME.color}:{p_pseudo:p,p_pin:pin});
+    if(j.error){document.querySelectorAll("#acForm button").forEach(b=>b.disabled=false);return err(cerr(j.error))}
+    ls.set("cd-cloud-"+ME.id,{id:j.id,token:j.token,pseudo:j.pseudo||p});
+    if(fn==="coachia_login"){const q=PROFS.find(x=>x.id===ME.id);if(q&&!q.named){q.pseudo=j.pseudo||p;q.named=true;saveProfs();ME.pseudo=q.pseudo;ME.named=true;renderMe()}}
+    toast(fn==="coachia_register"?"Compte créé !":"Connecté !");await cloudSync();openProfiles()};
+  $("#acForm").onsubmit=ev=>{ev.preventDefault();go("coachia_register")};$("#acIn").onclick=()=>go("coachia_login")}
+/* ---------- espace coach (toi seul, avec ton code) ---------- */
+const coachCode=()=>{try{return localStorage.getItem("coach-code")||""}catch(e){return""}};
+function openCoach(){const a=$("#auth");a.hidden=false;document.body.style.overflow="hidden";
+  if(!coachCode()){a.innerHTML=`<div class="authcard pm" role="document"><div class="sh-top"><h2>Espace coach</h2><button class="sh-x" id="cX">Fermer</button></div>
+    <p class="note" style="margin:0;padding:0">Réservé au coach. Entre ton code secret.</p>
+    <form id="cF" class="aform" novalidate><label class="fld"><span class="label" style="padding:0">Code coach</span><input id="cC" type="password" autocomplete="off"></label><p class="err" id="cE" hidden></p><button class="cta" type="submit">Entrer</button></form></div>`;
+    $("#cX").onclick=openProfiles;
+    $("#cF").onsubmit=async ev=>{ev.preventDefault();const c=$("#cC").value.trim();const j=await rpc("coachia_admin_check",{p_code:c});
+      if(j.error||j.ok===false){$("#cE").textContent=cerr(j.error||"code_invalide");$("#cE").hidden=false;return}
+      try{localStorage.setItem("coach-code",c)}catch(e){}openCoach()};return}
+  a.innerHTML=`<div class="authcard pm" role="document"><div class="sh-top"><h2>Mes inscrits</h2><button class="sh-x" id="cX">Fermer</button></div><p class="note" style="text-align:center">Chargement…</p></div>`;
+  $("#cX").onclick=closeProfiles;
+  rpc("coachia_admin_list",{p_code:coachCode()}).then(j=>{
+    if(j.error){if(j.error==="code_invalide"){try{localStorage.removeItem("coach-code")}catch(e){}return openCoach()}$("#auth .note").textContent=cerr(j.error);return}
+    const L=j.members||[];
+    a.innerHTML=`<div class="authcard pm" role="document"><div class="sh-top"><h2>Mes inscrits (${L.length})</h2><button class="sh-x" id="cX">Fermer</button></div>
+      <div class="plist">${L.length?L.map(m=>`<button class="psel" data-id="${m.id}"><i style="background:${esc(m.color||"#1F4BFF")}">${initial(m.pseudo)}</i><span>${esc(m.pseudo)}<small class="csub">${m.sessions} séance${m.sessions>1?"s":""} · ${m.week} cette semaine · ${fmtMin(+m.total_sec||0)}</small></span>${m.unread>0?`<b class="pcur">${m.unread} nouveau${m.unread>1?"x":""}</b>`:""}</button>`).join(""):'<p class="note" style="text-align:center">Personne n\'est encore inscrit.</p>'}</div>
+      <span class="prow2"><button class="small-btn pri" id="cAll" type="button">Message à tous</button><button class="small-btn" id="cOut" type="button">Verrouiller</button></span>
+      <details class="cset"><summary>Changer mon code coach</summary><form id="cNew" class="prow2" novalidate><input id="cNc" type="password" minlength="6" placeholder="Nouveau code (6+ car.)" autocomplete="off"><button class="small-btn" type="submit">Changer</button></form></details></div>`;
+    $("#cX").onclick=closeProfiles;a.onclick=ev=>{if(ev.target===a)closeProfiles()};
+    $("#cOut").onclick=()=>{try{localStorage.removeItem("coach-code")}catch(e){}openProfiles()};
+    a.querySelectorAll(".psel").forEach(b=>b.onclick=()=>coachMember(b.dataset.id));
+    $("#cAll").onclick=()=>{const t=prompt("Message envoyé à tous les inscrits :");if(t&&t.trim())rpc("coachia_admin_send",{p_code:coachCode(),p_id:null,p_body:t}).then(r=>toast(r.error?cerr(r.error):"Envoyé à "+r.sent+" inscrit(s)"))};
+    $("#cNew").onsubmit=ev=>{ev.preventDefault();const n=$("#cNc").value.trim();if(n.length<6)return toast("6 caractères minimum");
+      rpc("coachia_admin_setcode",{p_code:coachCode(),p_new:n}).then(r=>{if(r.error)return toast(cerr(r.error));try{localStorage.setItem("coach-code",n)}catch(e){}toast("Code changé")})}})}
+function coachMember(id){const a=$("#auth");a.innerHTML=`<div class="authcard pm" role="document"><p class="note" style="text-align:center">Chargement…</p></div>`;
+  rpc("coachia_admin_member",{p_code:coachCode(),p_id:id}).then(j=>{if(j.error){toast(cerr(j.error));return openCoach()}
+    const m=j.member||{},S2=j.sessions||[],G=j.messages||[];
+    const wk=S2.filter(r=>Date.now()-new Date(r.date)<7*864e5).length,tot=S2.reduce((s,r)=>s+(+r.realSec||0),0),kc=S2.reduce((s,r)=>s+(+r.kcal||0),0);
+    const pr=m.profile||{};
+    a.innerHTML=`<div class="authcard pm chat" role="document"><div class="sh-top"><h2>${esc(m.pseudo||"")}</h2><button class="sh-x" id="cB">Retour</button></div>
+      <div class="fstats"><div><b>${S2.length}</b><span>séances</span></div><div><b>${wk}</b><span>7 jours</span></div><div><b>${fmtMin(tot)}</b><span>total</span></div><div><b>${Math.round(kc)}</b><span>kcal</span></div></div>
+      <p class="note" style="margin:0;padding:0">Dernière connexion : ${m.last_seen?when(m.last_seen):"–"}${pr.place?" · "+(pr.place==="gym"?"salle":"maison")+(pr.mins?" · "+pr.mins+" min":""):""}</p>
+      <div class="slist">${S2.slice(0,12).map(r=>`<div class="srow"><b>${esc(r.title||"Séance")}</b><span>${when(r.date)} · ${fmtMin(+r.realSec||0)} · ${Math.round(+r.kcal||0)} kcal${r.feel?" · "+esc(r.feel):""}${r.early?" · arrêtée":""}</span></div>`).join("")||'<p class="note">Aucune séance enregistrée.</p>'}</div>
+      <div class="thread" id="thr">${G.map(g=>`<div class="bub ${g.from_coach?"mi":"coach"}"><span>${esc(g.body)}</span><small>${g.from_coach?"Toi · ":esc(m.pseudo)+" · "}${when(g.at)}</small></div>`).join("")||'<p class="note" style="text-align:center">Pas encore de message.</p>'}</div>
+      <form id="cS" class="prow2" novalidate><input id="cI" maxlength="1000" placeholder="Écrire à ${esc(m.pseudo||"")}…" autocomplete="off"><button class="small-btn pri" type="submit">Envoyer</button></form></div>`;
+    const t=$("#thr");t.scrollTop=t.scrollHeight;$("#cB").onclick=openCoach;a.onclick=ev=>{if(ev.target===a)closeProfiles()};
+    $("#cS").onsubmit=ev=>{ev.preventDefault();const v=$("#cI").value.trim();if(!v)return;rpc("coachia_admin_send",{p_code:coachCode(),p_id:id,p_body:v}).then(r=>{if(r.error)return toast(cerr(r.error));coachMember(id)})}})}
+
 const mine=r=>!ME||r.pid===ME.id||(!r.pid&&ME.first);
 
 /* ---------- apparence jour / nuit ---------- */
